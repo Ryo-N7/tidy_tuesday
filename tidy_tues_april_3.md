@@ -1,6 +1,27 @@
 ``` r
 library(xlsx)
+```
+
+    ## Loading required package: rJava
+
+    ## Loading required package: xlsxjars
+
+``` r
 library(dplyr)
+```
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
 library(stringr)
 library(tidyr)
 library(ggplot2)
@@ -163,3 +184,36 @@ usa_avg_tuition %>%
 ```
 
 <img src="tidy_tues_april_3_files/figure-markdown_github/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+
+``` r
+# ALL states
+
+usa_avg_tuition %>% 
+  ggplot(aes(year, rank, group = state)) +
+  geom_line(aes(color = state), size = 1.6, alpha = 0.75) +
+  geom_point(aes(color = state), size = 3, alpha = 1) +
+  scale_y_reverse(breaks = 1:50) +         # show only top 10!
+  geom_text(data = usa_avg_tuition %>% filter(year == "2004-2005"),
+            aes(label = state, x = -0.3), 
+            fontface = "bold", color = "black", size = 2.7) +
+  #geom_label(data = usa_avg_tuition %>% filter(year == "2004-2005"),
+            #aes(label = paste("$", tuition)), nudge_x = -1.3, nudge_y = -0.4, 
+            #fontface = "bold", color = "black", size = 2.5) +
+  geom_text(data = usa_avg_tuition %>% filter(year == "2015-2016"),
+            aes(label = state, x = 13.25), 
+            fontface = "bold", color = "black", size = 2.7) +
+  #geom_label(data = usa_avg_tuition %>% filter(year == "2015-2016"),
+             #aes(label = paste("$", tuition)), nudge_x = 1.3, nudge_y = -0.4, 
+             #fontface = "bold", color = "black", size = 2.5) +
+  coord_cartesian(ylim = c(1, 51), xlim = c(-0.9, 14)) +
+  theme_tuition +
+  #scale_color_manual(values = colors) +
+  labs(x = "Year", 
+       y = "Rank\n&\nTuition",
+       title = "Average College Tuition Rankings in the United States",
+       subtitle = "By State, 2004-2005 to 2015-2016",
+       caption = "By: Ryo Nakagawara (@R_by_Ryo) \n Source: https://onlinembapage.com/average-tuition-and-educational-attainment-in-the-united-states/\n#TidyTuesday") +
+  theme(axis.text.y = element_text(size = 6.5))
+```
+
+<img src="tidy_tues_april_3_files/figure-markdown_github/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
