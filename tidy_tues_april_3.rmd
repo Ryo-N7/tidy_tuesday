@@ -1,49 +1,44 @@
-``` r
+---
+title: "tidy_tues_april_3"
+author: "RN7"
+date: "April 3, 2018"
+output: 
+  md_document: 
+    variant: markdown_github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
 library(xlsx)
 library(dplyr)
 library(stringr)
 library(tidyr)
 library(ggplot2)
 library(scales)
+
 ```
 
-load data, check data
-=====================
+# load data, check data
 
-``` r
+```{r}
+
 usa_avg_tuition <- read.xlsx(file = "us_avg_tuition.xlsx", sheetName = "Table 5")
 
 glimpse(usa_avg_tuition)
-```
 
-    ## Observations: 50
-    ## Variables: 13
-    ## $ State       <fct> Alabama, Alaska, Arizona, Arkansas, California, Co...
-    ## $ X2004.05    <dbl> 5682.838, 4328.281, 5138.495, 5772.302, 5285.921, ...
-    ## $ X2005.06    <dbl> 5840.550, 4632.623, 5415.516, 6082.379, 5527.881, ...
-    ## $ X2006.07    <dbl> 5753.496, 4918.501, 5481.419, 6231.977, 5334.826, ...
-    ## $ X..2007.08. <dbl> 6008.169, 5069.822, 5681.638, 6414.900, 5672.472, ...
-    ## $ X2008.09    <dbl> 6475.092, 5075.482, 6058.464, 6416.503, 5897.888, ...
-    ## $ X2009.10    <dbl> 7188.954, 5454.607, 7263.204, 6627.092, 7258.771, ...
-    ## $ X2010.11    <dbl> 8071.134, 5759.153, 8839.605, 6900.912, 8193.739, ...
-    ## $ X2011.12    <dbl> 8451.902, 5762.421, 9966.716, 7028.991, 9436.426, ...
-    ## $ X2012.13    <dbl> 9098.069, 6026.143, 10133.503, 7286.580, 9360.574,...
-    ## $ X2013.14    <dbl> 9358.929, 6012.445, 10296.200, 7408.495, 9274.193,...
-    ## $ X2014.15    <dbl> 9496.084, 6148.808, 10413.844, 7606.410, 9186.824,...
-    ## $ X2015.16    <dbl> 9751.101, 6571.340, 10646.278, 7867.297, 9269.844,...
-
-``` r
 colnames(usa_avg_tuition)
+
 ```
 
-    ##  [1] "State"       "X2004.05"    "X2005.06"    "X2006.07"    "X..2007.08."
-    ##  [6] "X2008.09"    "X2009.10"    "X2010.11"    "X2011.12"    "X2012.13"   
-    ## [11] "X2013.14"    "X2014.15"    "X2015.16"
+# deal with annoying column names ==> regex time!
 
-deal with annoying column names ==&gt; regex time!
-==================================================
+```{r}
 
-``` r
 colnames(usa_avg_tuition) <- colnames(usa_avg_tuition) %>% 
   str_replace_all("X", "") %>% 
   str_replace("\\.", "-20")
@@ -51,12 +46,13 @@ colnames(usa_avg_tuition) <- colnames(usa_avg_tuition) %>%
 # manually change 2007-2008 ...
 
 usa_avg_tuition <- usa_avg_tuition %>% rename(`2007-2008` = `-20.2007.08.`)
+
 ```
 
-gather to correct format + create "rank" column
-===============================================
+# gather to correct format + create "rank" column
 
-``` r
+```{r}
+
 usa_avg_tuition <- usa_avg_tuition %>% gather(key = "year", value = "tuition", -State)
 
 usa_avg_tuition <- usa_avg_tuition %>% 
@@ -67,24 +63,20 @@ usa_avg_tuition <- usa_avg_tuition %>%
 
 usa_avg_tuition <- usa_avg_tuition %>% 
   mutate(state = as.character(State))
+
 ```
 
-`pull()` out the top 10 states for start year and end year ==&gt; assign color to them.
+`pull()` out the top 10 states for start year and end year ==> assign color to them.
 
-``` r
+```{r}
+
 top_states <- usa_avg_tuition %>% 
   filter(year %in% c("2004-2005", "2015-2016") & rank %in% c(1:10)) %>% 
   pull(state) %>% 
   unique()
 
 top_states
-```
 
-    ##  [1] "Vermont"        "Pennsylvania"   "Ohio"           "New Hampshire" 
-    ##  [5] "New Jersey"     "Massachusetts"  "Maryland"       "Delaware"      
-    ##  [9] "South Carolina" "Illinois"       "Michigan"       "Virginia"
-
-``` r
 usa_avg_tuition <- usa_avg_tuition %>% 
   mutate(top_tuition = state %in% top_states,
          tuition = round(tuition, digits = 2))
@@ -103,18 +95,14 @@ colors = c(
   Michigan = "yellow",
   Virginia = "violet"
 )
+
 ```
 
-bump chart theme
-================
+# bump chart theme
 
-``` r
+```{r}
 library(extrafont)
-```
 
-    ## Registering fonts with R
-
-``` r
 theme_tuition <-  
   theme(text = element_text(family = "Arial Narrow", color = "#444444", face = "bold"),
         plot.title = element_text(size = 24, hjust = 0.5),
@@ -128,12 +116,13 @@ theme_tuition <-
         panel.grid.minor.y = element_blank(),
         legend.title = element_blank(),
         legend.position = "none")
+
 ```
 
-the final bump chart
-====================
+# the final bump chart
 
-``` r
+```{r fig.height=7, fig.width=9, fig.align='center'}
+
 usa_avg_tuition %>% 
   filter(top_tuition == TRUE) %>% 
   ggplot(aes(year, rank, group = state)) +
@@ -160,6 +149,6 @@ usa_avg_tuition %>%
        title = "Average College Tuition Rankings in the United States",
        subtitle = "By State, 2004-2005 to 2015-2016",
        caption = "By: Ryo Nakagawara (@R_by_Ryo) \n Source: https://onlinembapage.com/average-tuition-and-educational-attainment-in-the-united-states/\n#TidyTuesday")
+
 ```
 
-<img src="tidy_tues_april_3_files/figure-markdown_github/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
