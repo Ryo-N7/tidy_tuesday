@@ -1,3 +1,10 @@
+## [April 3](#april-3): College tuition data
+
+## [April 10](#april-10): NFL salaries by position
+
+
+## [April 3](#april-3): College tuition data
+
 ``` r
 library(xlsx)
 library(dplyr)
@@ -129,7 +136,6 @@ theme_tuition <-
         legend.title = element_blank(),
         legend.position = "none")
 ```
-
 the final bump chart
 ====================
 
@@ -162,4 +168,13 @@ usa_avg_tuition %>%
        caption = "By: Ryo Nakagawara (@R_by_Ryo) \n Source: https://onlinembapage.com/average-tuition-and-educational-attainment-in-the-united-states/\n#TidyTuesday")
 ```
 
-<img src="tidy_tues_april_3_files/figure-markdown_github/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="april_3_week_1/tidy_tues_april_3_files/figure-markdown_github/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+
+
+## [April 10](#april-10): NFL salaries by position
+
+
+## load data, check data
+
+
+
