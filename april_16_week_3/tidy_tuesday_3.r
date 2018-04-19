@@ -31,8 +31,7 @@ df %>%
 
 
 df_gather <- df %>% 
-  gather(key = "cause_of_death", value = "percentages", -country, -country_code, -year) %>% 
-  glimpse()
+  gather(key = "cause_of_death", value = "percentages", -country, -country_code, -year) 
 
 df_gather %>% pull(country_code) %>% unique()
 # 194 countries and NA and OWID_WRL (World)
@@ -63,6 +62,24 @@ anim <- df_gather %>%
   theme(legend.position = "none")
 
 gganimate(anim)
+
+## bars
+
+df_gather %>% 
+  filter(country == "Kenya") %>% 
+  group_by(year) %>% 
+  arrange(desc(year), desc(percentages))
+
+anim <- df_gather %>% 
+  filter(country == "Kenya") %>% 
+  ggplot(aes(x = reorder(cause_of_death, percentages), y = percentages, fill = cause_of_death, frame = year)) +
+  geom_bar(stat = "identity") +
+  ylim(c(0, 80)) + 
+  coord_flip() +
+  theme(legend.position = "none")
+
+gganimate(anim)
+
 
 
 
@@ -164,7 +181,6 @@ df2 %>%
 
 ### boxplots
 
-# no accumulation for geom_boxplot....
 
 df_afr_anim <- df2 %>% 
   filter(cause_of_death %in% diseases_disorders,
@@ -173,5 +189,105 @@ df_afr_anim <- df2 %>%
   geom_boxplot()
 
 library(gganimate)
-gganimate_save(df_afr_anim)
+
+gganimate(df_afr_anim)
+
+
+df2 %>% 
+  filter(cause_of_death %in% diseases_disorders,
+         reg_name == "Western Africa",
+         year == 1990) %>% 
+  ggplot(aes(cause_of_death, percentages)) +
+  geom_boxplot()
+
+west_afr <- df2 %>% 
+  filter(cause_of_death %in% diseases_disorders,
+         reg_name == "Western Africa")
+
+glimpse(west_afr)
+
+# 15 WestAfr countries
+west_afr %>% pull(country) %>% unique() # n_distinct()
+
+
+nort_am <- df2 %>% 
+  filter(cause_of_death %in% diseases_disorders,
+         reg_name == "Northern America")
+
+glimpse(nort_am)
+
+# 16 diseases/disorders  non-mental >>> delete parkinsons
+
+# no accumulation for geom_boxplot....
+# do it the old fashioned way with for_loop :O
+library(jpeg)
+
+
+years <- c(1990:1993)
+
+for (i in years) {
+  
+  #west_afr <- west_afr %>% 
+  #  filter(year <= y)
+  
+  boxplots <- west_afr %>% 
+    filter(year == i) %>% 
+    ggplot(aes(cause_of_death, percentages)) +
+    geom_boxplot()
+  
+  ggsave(file = paste0("boxplots/", i, ".jpg"), plot = boxplots, width = 6, height = 4, units = "in", dpi = 300)
+  print(paste0("processings: ", i))
+  
+}
+
+
+
+west_afr %>% 
+  group_by(year) %>% 
+  nest() %>% 
+  head()
+
+library(purrr)
+
+nested_west_afr <- west_afr %>% 
+  group_by(year) %>% 
+  nest() %>% 
+  mutate(plot = map2(data, year, 
+                     ~ggplot(data = .x, 
+                             aes(cause_of_death, percentages)) + 
+                       geom_boxplot()
+                     ))
+
+glimpse(nested_west_afr)
+
+nested_west_afr$plot[20]
+
+
+west_afr %>% 
+  filter(year == 2010) %>% 
+  ggplot(aes(cause_of_death, percentages)) +
+  geom_boxplot() +
+  theme_bw() +
+  coord_flip()
+
+## divide by cause == smaller groups??
+df2 %>% pull(cause_of_death) %>% unique()
+
+df2 %>% 
+  filter(year == 2010) %>% 
+  ggplot(aes(cause_of_death, percentages)) +
+  geom_boxplot() +
+  theme_bw() +
+  coord_flip()
+
+# reorder by highest avg for the region?
+
+
+
+
+
+
+
+
+
 
