@@ -2,7 +2,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(ggmap)
-library(xlsx)
+#library(xlsx)
 library(forcats)
 
 #df <- read.xlsx(file = "../tidy_tuesday/april_16_week_3/global_mortality.xlsx", 
@@ -83,7 +83,9 @@ gganimate(anim)
 
 
 
-diseases_disorders <- c("tuberculosis", "respiratory_diseases", "parkinson_disease", "meningitis",
+# Separate diseases/disorders ---------------------------------------------
+
+diseases_disorders <- c("tuberculosis", "respiratory_diseases", "meningitis",
                         "malaria", "lower_respiratory_infections", "liver_disease", "hiv_aids",
                         "intestinal_infectious_diseases", "kidney_disease", "hepatitis",
                         "digestive_diseases", "diarrheal_diseases", "diabetes", "cancers",
@@ -91,7 +93,7 @@ diseases_disorders <- c("tuberculosis", "respiratory_diseases", "parkinson_disea
 
 
 
-
+# combine with UN Regional Names ------------------------------------------
 library(wpp2015)
 data("UNlocations")
 
@@ -146,6 +148,9 @@ df_jp_anim <- df2 %>%
   
 gganimate(df_jp_anim)
 
+
+# geom_dumbbell TEST ------------------------------------------------------
+
 library(ggalt)
 
 df2 %>% 
@@ -179,7 +184,8 @@ df2 %>%
 # western europe, east asia as `country` vars.........
 
 
-### boxplots
+# boxplots gganimate TEST -------------------------------------------------
+
 
 
 df_afr_anim <- df2 %>% 
@@ -201,8 +207,7 @@ df2 %>%
   geom_boxplot()
 
 west_afr <- df2 %>% 
-  filter(cause_of_death %in% diseases_disorders,
-         reg_name == "Western Africa")
+  filter(reg_name == "Western Africa")
 
 glimpse(west_afr)
 
@@ -211,8 +216,7 @@ west_afr %>% pull(country) %>% unique() # n_distinct()
 
 
 nort_am <- df2 %>% 
-  filter(cause_of_death %in% diseases_disorders,
-         reg_name == "Northern America")
+  filter(reg_name == "Northern America")
 
 glimpse(nort_am)
 
@@ -242,6 +246,8 @@ for (i in years) {
 
 
 
+# nested west africa TEST -------------------------------------------------
+
 west_afr %>% 
   group_by(year) %>% 
   nest() %>% 
@@ -254,40 +260,199 @@ nested_west_afr <- west_afr %>%
   nest() %>% 
   mutate(plot = map2(data, year, 
                      ~ggplot(data = .x, 
-                             aes(cause_of_death, percentages)) + 
-                       geom_boxplot()
+                             aes(reorder(cause_of_death, percentages), percentages)) + 
+                       geom_boxplot() +
+                       coord_flip()
                      ))
 
 glimpse(nested_west_afr)
 
 nested_west_afr$plot[20]
 
+map2(paste0("april_16_week_3/boxplots/", nested_west_afr$year, ".jpg"), nested_west_afr$plot, ggsave)
 
-west_afr %>% 
-  filter(year == 2010) %>% 
-  ggplot(aes(cause_of_death, percentages)) +
-  geom_boxplot() +
-  theme_bw() +
-  coord_flip()
+
+# divide by regions -------------------------------------------------------
 
 ## divide by cause == smaller groups??
 df2 %>% pull(cause_of_death) %>% unique()
 
 df2 %>% 
-  filter(year == 2010) %>% 
-  ggplot(aes(cause_of_death, percentages)) +
-  geom_boxplot() +
+  filter(year == 1999,
+         reg_name == "Eastern Africa") %>% 
+  mutate(percentages = percentages/100) %>%
+  ggplot(aes(reorder(cause_of_death, percentages), percentages)) +
+  geom_boxplot(fill = "white", color = "darkred", outlier.color = "black") +
+  scale_y_continuous(breaks = scales::pretty_breaks(10), 
+                     limits = c(0, 1),
+                     labels = scales::percent,
+                     expand = c(0.02, 0)) +
+  coord_flip() +
+  labs(title = "Median proportion of 'Cause of Death' in the Western Africa region",
+       y = "Proportion of All Deaths",
+       x = "Cause of death") +
   theme_bw() +
-  coord_flip()
+  theme(panel.grid.major.y = element_blank())
+  
 
 # reorder by highest avg for the region?
+# outlier for CONFLICT in 1997, Southern Europe == Albania... from ~0% to 10% of all deaths due to conflict
+# outlier for CONFLICT in 1994, Eastern Africa == Rwanda... NA in 1993 to 82.3% of all deaths due to conflict
+# outlier for CONFLICT in 1999, Eastern Africa == Eritrea  to 37% of all deaths due to conflict
+glimpse(df2)
+
+
+df2 %>% 
+  filter(reg_name == "Southern Europe",
+         cause_of_death %in% c("terrorism", "conflict"))
+
+df2 %>% 
+  filter(reg_name == "Eastern Africa",
+         cause_of_death %in% c("terrorism", "conflict"),
+         country == "Rwanda")
+
+
+
+# western africa ACTUAL ---------------------------------------------------
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(xlsx)
+
+## Load file
+df <- read.csv(file = "../tidy_tuesday/april_16_week_3/df.csv")
+
+## Easily clean names
+df <- df %>% janitor::clean_names() 
+
+## Gather cause of deaths under single column 
+df_gather <- df %>% 
+  gather(key = "cause_of_death", value = "percentages", -country, -country_code, -year) 
+
+## Use stringr functions to make cleaned names work on plot, leave HIV/AIDS for now...
+library(stringr)
+
+df_gather <- df_gather %>% 
+  mutate(cause_of_death = stringr::str_replace_all(cause_of_death, "_", " "),
+         cause_of_death = stringr::str_to_title(cause_of_death),
+         cause_of_death = case_when(
+           cause_of_death == "Hiv Aids" ~ "HIV/AIDS",
+           TRUE ~ cause_of_death
+         )) 
+
+## Grab the "region name" from UNlocations dataset for easy subsetting! Ex. Eastern Europe, Western Africa, etc.
+library(wpp2015)
+
+data("UNlocations")
+
+UNlocations <- UNlocations %>% select(ends_with("name"))
+
+df2 <- df_gather %>% 
+  inner_join(UNlocations, by = c("country" = "name"))
+
+## Only look at countries in the "Western Africa" region
+west_afr <- df2 %>% 
+  filter(reg_name == "Western Africa")
+
+## Unfortunately geom_boxplot() does not support "frame" for gganimate...
+## Therefore, create plot for each year with purrr then use ImageMagick or other to compile into gif/video!
+
+library(purrr)
+
+nested_west_afr <- west_afr %>% 
+  mutate(percentages = percentages/100) %>%
+  group_by(year) %>% 
+  nest() %>% 
+  mutate(plot = map2(data, year, 
+                     ~ggplot(data = .x, aes(reorder(cause_of_death, percentages), percentages)) +
+                       geom_boxplot(fill = "white", color = "darkred", outlier.color = "black") +
+                       scale_y_continuous(breaks = scales::pretty_breaks(10), 
+                                          limits = c(0, 1),
+                                          labels = scales::percent,
+                                          expand = c(0.02, 0)) +
+                       coord_flip() +
+                       labs(title = "Median Proportion of 'Cause of Death' in Countries of the Western Africa Region",
+                            subtitle = "Years: 1990 - 2016, (1 second = 1 year)",
+                            y = "Proportion of All Deaths", x = "",
+                            caption = "By: Ryo Nakagawara (@R_by_Ryo) \n Source: ourworldindata.org\n#TidyTuesday") +
+                       theme_bw() +
+                       theme(panel.grid.major.y = element_blank(),
+                             text = element_text(family = "Arial Narrow"),
+                             plot.title = element_text(size = 14, hjust = 0.5),
+                             plot.subtitle = element_text(size = 10, hjust = 0.5)
+                             )
+  ))
+
+glimpse(nested_west_afr)
+
+nested_west_afr$plot[1]
+
+## Save each plot (per year) with ggsave!
+map2(paste0("april_16_week_3/boxplots/", nested_west_afr$year, ".jpg"), nested_west_afr$plot, ggsave)
+
+# Saving 9.49 x 7.98 in image
+
+## Futile attempts at using ImageMagick >>> gave up and just used GifMaker.me   :(
+
+years <- c(1990:2016)
+
+# C:/Users/Ryo Nakagawara/Documents/R_materials/tidy_tuesday/april_16_week_3/boxplots/
+
+for (i in years) {
+  
+  system(paste0('magick.exe convert C:/Users/"Ryo Nakagawara"/Documents/R_materials/tidy_tuesday/april_16_week_3/boxplots/', i, '.jpg C:/Users/"Ryo Nakagawara"/Documents/R_materials/tidy_tuesday/april_16_week_3/boxplots/', i, '.jpg -geometry +305+72 -composite -pointsize 100 -font Arial -annotate +2000+1120 ', i, 'C:/Users/"Ryo Nakagawara"/Documents/R_materials/tidy_tuesday/april_16_week_3/boxplots_combined/img', i, '.jpg'))
+  print(paste0("processing: ", i))
+  
+}
+
+## ....
+library(magick)
+
+image_convert()
 
 
 
 
+# Eastern Africa ----------------------------------------------------------
 
+## Only look at countries in the "Eastern Africa" region
+east_afr <- df2 %>% 
+  filter(reg_name == "Eastern Africa")
 
+## Unfortunately geom_boxplot() does not support "frame" for gganimate...
+## Therefore, create plot for each year with purrr then use ImageMagick or other to compile into gif/video!
 
+library(purrr)
 
+nested_east_afr <- east_afr %>% 
+  mutate(percentages = percentages/100) %>%
+  group_by(year) %>% 
+  nest() %>% 
+  mutate(plot = map2(data, year, 
+                     ~ggplot(data = .x, aes(reorder(cause_of_death, percentages), percentages)) +
+                       geom_boxplot(fill = "white", color = "darkred", outlier.color = "black") +
+                       scale_y_continuous(breaks = scales::pretty_breaks(10), 
+                                          limits = c(0, 1),
+                                          labels = scales::percent,
+                                          expand = c(0.02, 0)) +
+                       coord_flip() +
+                       labs(title = "Median Proportion of 'Cause of Death' in Countries of the Eastern Africa Region",
+                            subtitle = "Years: 1990 - 2016, (1 second = 1 year)",
+                            y = "Proportion of All Deaths", x = "",
+                            caption = "By: Ryo Nakagawara (@R_by_Ryo) \n Source: ourworldindata.org\n#TidyTuesday") +
+                       theme_bw() +
+                       theme(panel.grid.major.y = element_blank(),
+                             text = element_text(family = "Arial Narrow"),
+                             plot.title = element_text(size = 14, hjust = 0.5),
+                             plot.subtitle = element_text(size = 10, hjust = 0.5)
+                       )
+  ))
 
+glimpse(nested_east_afr)
+
+nested_east_afr$plot[5]
+
+## Save each plot (per year) with ggsave!
+map2(paste0("april_16_week_3/boxplots/", nested_east_afr$year, ".jpg"), nested_east_afr$plot, ggsave)
 
