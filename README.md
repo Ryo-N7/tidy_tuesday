@@ -2,6 +2,8 @@
 
 ## [April 10](#april-10): NFL salaries by position
 
+## [April 16](#april-16): Causes of death across the world
+
 
 ## [April 3](#april-3): College tuition data
 
@@ -175,6 +177,13 @@ usa_avg_tuition %>%
 
 
 ## load data, check data
+
+
+
+
+
+## [April 16](#april-16): Causes of death across the world
+
 
 
 
