@@ -1,59 +1,57 @@
-| Table of Contents           | (\#TidyTuesday)                  |
-|-----------------------------|----------------------------------|
-| \#\#\# [Week 1](#april-3):  | College tuition data             |
-| \#\#\# [Week 2](#april-10): | NFL salaries by position         |
-| \#\#\# [Week 3](#april-16): | Causes of death across the world |
+---
+title: "Untitled"
+author: "RN7"
+date: "April 22, 2018"
+output: 
+  md_document:
+    variant: markdown_github
+---
 
-------------------------------------------------------------------------
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+Table of Contents       | (#TidyTuesday)
+----------------------- | --------------------
+### [Week 1](#april-3):| College tuition data
+### [Week 2](#april-10):| NFL salaries by position
+### [Week 3](#april-16):| Causes of death across the world
+
+
+***
+
+
 
 ### April 3
-
 ### College tuition data
 
-``` r
+
+```{r}
 library(xlsx)
 library(dplyr)
 library(stringr)
 library(tidyr)
 library(ggplot2)
 library(scales)
+
 ```
 
 #### load data, check data
 
-``` r
+```{r}
+
 usa_avg_tuition <- read.xlsx(file = "april_3_week_1/us_avg_tuition.xlsx", sheetName = "Table 5")
 
 glimpse(usa_avg_tuition)
-```
 
-    ## Observations: 50
-    ## Variables: 13
-    ## $ State       <fct> Alabama, Alaska, Arizona, Arkansas, California, Co...
-    ## $ X2004.05    <dbl> 5682.838, 4328.281, 5138.495, 5772.302, 5285.921, ...
-    ## $ X2005.06    <dbl> 5840.550, 4632.623, 5415.516, 6082.379, 5527.881, ...
-    ## $ X2006.07    <dbl> 5753.496, 4918.501, 5481.419, 6231.977, 5334.826, ...
-    ## $ X..2007.08. <dbl> 6008.169, 5069.822, 5681.638, 6414.900, 5672.472, ...
-    ## $ X2008.09    <dbl> 6475.092, 5075.482, 6058.464, 6416.503, 5897.888, ...
-    ## $ X2009.10    <dbl> 7188.954, 5454.607, 7263.204, 6627.092, 7258.771, ...
-    ## $ X2010.11    <dbl> 8071.134, 5759.153, 8839.605, 6900.912, 8193.739, ...
-    ## $ X2011.12    <dbl> 8451.902, 5762.421, 9966.716, 7028.991, 9436.426, ...
-    ## $ X2012.13    <dbl> 9098.069, 6026.143, 10133.503, 7286.580, 9360.574,...
-    ## $ X2013.14    <dbl> 9358.929, 6012.445, 10296.200, 7408.495, 9274.193,...
-    ## $ X2014.15    <dbl> 9496.084, 6148.808, 10413.844, 7606.410, 9186.824,...
-    ## $ X2015.16    <dbl> 9751.101, 6571.340, 10646.278, 7867.297, 9269.844,...
-
-``` r
 colnames(usa_avg_tuition)
+
 ```
 
-    ##  [1] "State"       "X2004.05"    "X2005.06"    "X2006.07"    "X..2007.08."
-    ##  [6] "X2008.09"    "X2009.10"    "X2010.11"    "X2011.12"    "X2012.13"   
-    ## [11] "X2013.14"    "X2014.15"    "X2015.16"
+#### deal with annoying column names ==> regex time!
 
-#### deal with annoying column names ==&gt; regex time!
+```{r}
 
-``` r
 colnames(usa_avg_tuition) <- colnames(usa_avg_tuition) %>% 
   str_replace_all("X", "") %>% 
   str_replace("\\.", "-20")
@@ -61,11 +59,13 @@ colnames(usa_avg_tuition) <- colnames(usa_avg_tuition) %>%
 # manually change 2007-2008 ...
 
 usa_avg_tuition <- usa_avg_tuition %>% rename(`2007-2008` = `-20.2007.08.`)
+
 ```
 
 #### gather to correct format + create "rank" column
 
-``` r
+```{r}
+
 usa_avg_tuition <- usa_avg_tuition %>% gather(key = "year", value = "tuition", -State)
 
 usa_avg_tuition <- usa_avg_tuition %>% 
@@ -76,24 +76,20 @@ usa_avg_tuition <- usa_avg_tuition %>%
 
 usa_avg_tuition <- usa_avg_tuition %>% 
   mutate(state = as.character(State))
+
 ```
 
-#### `pull()` out the top 10 states for start year and end year ==&gt; assign color to them.
+#### `pull()` out the top 10 states for start year and end year ==> assign color to them.
 
-``` r
+```{r}
+
 top_states <- usa_avg_tuition %>% 
   filter(year %in% c("2004-2005", "2015-2016") & rank %in% c(1:10)) %>% 
   pull(state) %>% 
   unique()
 
 top_states
-```
 
-    ##  [1] "Vermont"        "Pennsylvania"   "Ohio"           "New Hampshire" 
-    ##  [5] "New Jersey"     "Massachusetts"  "Maryland"       "Delaware"      
-    ##  [9] "South Carolina" "Illinois"       "Michigan"       "Virginia"
-
-``` r
 usa_avg_tuition <- usa_avg_tuition %>% 
   mutate(top_tuition = state %in% top_states,
          tuition = round(tuition, digits = 2))
@@ -112,11 +108,12 @@ colors = c(
   Michigan = "yellow",
   Virginia = "violet"
 )
+
 ```
 
 #### bump chart theme
 
-``` r
+```{r}
 library(extrafont)
 
 theme_tuition <-  
@@ -132,11 +129,13 @@ theme_tuition <-
         panel.grid.minor.y = element_blank(),
         legend.title = element_blank(),
         legend.position = "none")
+
 ```
 
 #### the final bump chart
 
-``` r
+```{r fig.height=7, fig.width=9, fig.align='center'}
+
 usa_avg_tuition %>% 
   filter(top_tuition == TRUE) %>% 
   ggplot(aes(year, rank, group = state)) +
@@ -163,11 +162,11 @@ usa_avg_tuition %>%
        title = "Average College Tuition Rankings in the United States",
        subtitle = "By State, 2004-2005 to 2015-2016",
        caption = "By: Ryo Nakagawara (@R_by_Ryo) \n Source: https://onlinembapage.com/average-tuition-and-educational-attainment-in-the-united-states/\n#TidyTuesday")
+
 ```
 
-<img src="readme_tidytuesday_files/figure-markdown_github/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
-``` r
+```{r fig.height=12, fig.width=9, fig.align='center'}
 # ALL states
 library(viridis)
 
@@ -197,23 +196,31 @@ usa_avg_tuition %>%
        subtitle = "By State, 2004-2005 to 2015-2016",
        caption = "By: Ryo Nakagawara (@R_by_Ryo) \n Source: https://onlinembapage.com/average-tuition-and-educational-attainment-in-the-united-states/\n#TidyTuesday") +
   theme(axis.text.y = element_text(size = 6.5))
+
+
 ```
 
-<img src="readme_tidytuesday_files/figure-markdown_github/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+
+
 
 ### April 10
-
 ### NFL salaries by position
 
 (did not participate this week)
 
-### April 16
 
+
+
+
+### April 16
 ### Causes of death across the world
+
+
 
 ### load data
 
-``` r
+```{r}
+
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -224,9 +231,11 @@ df <- read.csv(file = "../tidy_tuesday/april_16_week_3/df.csv")
 
 ## Easily clean names
 df <- df %>% janitor::clean_names() 
+
 ```
 
-``` r
+
+```{r }
 ## Gather cause of deaths under single column 
 df_gather <- df %>% 
   gather(key = "cause_of_death", value = "percentages", -country, -country_code, -year) 
@@ -241,11 +250,13 @@ df_gather <- df_gather %>%
            cause_of_death == "Hiv Aids" ~ "HIV/AIDS",
            TRUE ~ cause_of_death
          )) 
+
+
 ```
 
 ### Grab the "region name" from UNlocations dataset for easy subsetting! Ex. Eastern Europe, Western Africa, etc.
 
-``` r
+```{r}
 library(wpp2015)
 
 data("UNlocations")
@@ -258,15 +269,13 @@ df2 <- df_gather %>%
 ## Only look at countries in the "Eastern Africa" region
 east_afr <- df2 %>% 
   filter(reg_name == "Eastern Africa")
+
 ```
 
-Unfortunately geom\_boxplot() does not support "frame" for gganimate...
------------------------------------------------------------------------
+## Unfortunately geom_boxplot() does not support "frame" for gganimate...
+## Therefore, create plot for each year with purrr then use ImageMagick or other to compile into gif/video!
 
-Therefore, create plot for each year with purrr then use ImageMagick or other to compile into gif/video!
---------------------------------------------------------------------------------------------------------
-
-``` r
+```{r eval=FALSE}
 library(purrr)
 
 nested_east_afr <- east_afr %>% 
@@ -299,18 +308,24 @@ glimpse(nested_east_afr)
 #nested_east_afr$plot[20]
 #nested_east_afr$plot[13]
 #nested_east_afr$plot[1]
+
 ```
 
 #### Save each plot (per year) with ggsave!
 
-``` r
+```{r eval=FALSE}
+
 map2(paste0("april_16_week_3/boxplots/", nested_east_afr$year, ".jpg"), nested_east_afr$plot, ggsave)
+
 ```
 
 #### Use ImageMagick through Command Console:
-
 ![]()
 
 #### Final GIF:
 
 ![]()
+
+
+
+
