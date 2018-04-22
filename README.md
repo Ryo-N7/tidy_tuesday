@@ -1,11 +1,12 @@
-## [April 3](#april-3): College tuition data
+#### [Week 1](#april-3): College tuition data
 
-## [April 10](#april-10): NFL salaries by position
+#### [Week 2](#april-10): NFL salaries by position
 
-## [April 16](#april-16): Causes of death across the world
+#### [Week 3](#april-16): Causes of death across the world
 
 
-## [April 3](#april-3): College tuition data
+#### April 3
+#### College tuition data
 
 ``` r
 library(xlsx)
@@ -173,16 +174,17 @@ usa_avg_tuition %>%
 <img src="april_3_week_1/tidy_tues_april_3_files/figure-markdown_github/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 
-## [April 10](#april-10): NFL salaries by position
+#### April 10
+#### NFL salaries by position
+
+(did not participate this week)
 
 
-## load data, check data
 
 
 
-
-
-## [April 16](#april-16): Causes of death across the world
+#### April 16
+#### Causes of death across the world
 
 
 

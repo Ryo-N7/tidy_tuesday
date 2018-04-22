@@ -438,20 +438,23 @@ nested_east_afr <- east_afr %>%
                                           expand = c(0.02, 0)) +
                        coord_flip() +
                        labs(title = "Median Proportion of 'Cause of Death' in Countries of the Eastern Africa Region",
-                            subtitle = "Years: 1990 - 2016, (1 second = 1 year)",
+                            subtitle = paste0("Year: ", .y), # .y == YEAR!
                             y = "Proportion of All Deaths", x = "",
                             caption = "By: Ryo Nakagawara (@R_by_Ryo) \n Source: ourworldindata.org\n#TidyTuesday") +
                        theme_bw() +
                        theme(panel.grid.major.y = element_blank(),
                              text = element_text(family = "Arial Narrow"),
                              plot.title = element_text(size = 14, hjust = 0.5),
-                             plot.subtitle = element_text(size = 10, hjust = 0.5)
+                             plot.subtitle = element_text(size = 12, hjust = 0.5)
                        )
   ))
 
 glimpse(nested_east_afr)
 
 nested_east_afr$plot[5]
+nested_east_afr$plot[20]
+nested_east_afr$plot[13]
+nested_east_afr$plot[1]
 
 ## Save each plot (per year) with ggsave!
 map2(paste0("april_16_week_3/boxplots/", nested_east_afr$year, ".jpg"), nested_east_afr$plot, ggsave)
