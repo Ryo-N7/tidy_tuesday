@@ -1,0 +1,61 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "May 1, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+
+```{r }
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(readr)
+
+acs_survey <- read_csv("april_30_week_5/acs2015_county_data.csv")
+
+glimpse(acs_survey)
+
+# gather on Ethnicity
+acs_survey <- acs_survey %>% gather(key = "ethnicity", value = "percentage", Hispanic:Pacific)
+
+
+
+```
+
+
+
+
+
+```{r}
+library(albersusa)
+
+counties_map_data <- counties_composite()
+
+glimpse(counties_map_data@data)
+
+
+counties_map_data@data <- left_join(counties_map_data@data, acs_survey, by = c("name" = "County"))
+
+anti_counties_map_data <- anti_join(counties_map_data@data, acs_survey, by = c("name" = "County"))
+# ~50 counties from Alaska and Virginia dont have matching name == County between 2 data sets.........
+
+
+# CensusID  == fips >>> fips is chr and has 0 in front of all
+
+glimpse(counties_map_data@data)
+
+plot(counties_map_data, lwd = 0.25)
+
+c_map <- fortify(counties_map_data, region = "fips")
+
+
+```
+
