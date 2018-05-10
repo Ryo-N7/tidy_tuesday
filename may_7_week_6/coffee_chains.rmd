@@ -23,7 +23,7 @@ library(ggplot2)
 library(scales)
 library(sf)
 library(purrr)
-
+library(spData)
 
 ```
 
@@ -33,17 +33,100 @@ You can also embed plots, for example:
 
 ```{r }
 
-coffee_df_raw <- data_frame(sheet = c(1, 2, 3)) %>% 
-  mutate(data = map(sheet, 
-                    function(x) {read_excel("../may_7_week_6/week6_coffee_chains.xlsx", sheet = x)
-                    })
-  )
+starbucks_raw <- read_excel("../may_7_week_6/week6_coffee_chains.xlsx", sheet = 1)
 
+glimpse(starbucks_raw)
+
+starbucks_usa <- starbucks_raw %>% 
+  janitor::clean_names() %>% 
+  select(brand, city, state_province, country, longitude, latitude) %>% 
+  filter(country == "US") %>% 
+  group_by(state_province) %>% 
+  summarize(count = n()) %>% 
+  ungroup()
+
+class(starbucks_usa)
+# spData::us_states %>% pull(NAME) %>% unique() --- Postal abbrv same as ISO
+# ggmap::get_map()
+# acs::fips.state %>% st_as_sf()
+# us_states %>% glimpse()
+
+states_sf <- tigris::states(cb = TRUE) %>% 
+  st_as_sf() %>% 
+  select(STUSPS, NAME, geometry) %>% 
+  filter(!STUSPS %in% c("VI", "MP", "GU", "PR", "AS")) # filter out territories and Puerto Rico
+
+class(states_sf)
+
+#starbucks_sf <- starbucks_usa %>% left_join(states_sp, by = c("state_province" = "STUSPS")) %>% glimpse()
+# starbucks_usa %>% left_join.sf(states_sp, by = c("state_province" = "STUSPS")) %>% class()
+starbucks_sf <- states_sf %>% left_join(starbucks_usa, by = c("STUSPS" = "state_province"))
+
+class(starbucks_sf) # sf and data.frame
+
+st_crs(starbucks_sf) # 4269, GRS80
+
+plot(starbucks_sf)
+
+# remove Alaska and Hawaii... for now
+starbucks_sf2 <- starbucks_sf %>% filter(!NAME %in% c("Alaska", "Hawaii")) %>% glimpse()
+st_crs(starbucks_sf2)
+
+starbucks_sf2 %>% 
+  ggplot() +
+  geom_sf(aes(fill = count))
+
+```
+
+
+
+cartograms :: `nc_cartogram()` >>> by number of each coffee chain!
+
+```{r }
+# dev="cairo_pdf", dev.args=list(family = "Lucida Console") crs = 2163
+library(cartogram)
+starb_cartogram <- st_transform(starbucks_sf2, crs = 2163)
+
+# reshape as sp object for nc_cartogram()
+starb_sp <- as(starb_cartogram, "Spatial")
+
+# construct non-contiguous area cartogram
+starb_cartogram <- nc_cartogram(starb_sp, weight = "count") # k = 1 is default
+
+library(tmap)
+
+# Sequential single hue color palette :: http://colorbrewer2.org/#type=sequential&scheme=Greens&n=5
+greenpal <- c('#edf8e9','#bae4b3','#74c476','#31a354','#006d2c')
+
+
+# add "jenks" process for better interval categories (California and Texas are still their own categories but best I can do with big outliers)
+# legend.reverse for HIGH values on TOP, slight sepia to offset white glare?
+# fiddle with margins to fit legend and small title
+# plot!
+starbucks_cartogram <- tm_shape(starb_cartogram) + 
+  tm_borders("grey10") +
+  tm_fill(title = "", "count", 
+          palette = greenpal, 
+          style = "jenks",
+          legend.reverse = TRUE) +
+  tm_layout(inner.margins = c(.04,.02, .08, .02),
+            main.title = "Number of Starbucks across the United States",
+            title = "(Source: https://www.kaggle.com/starbucks/store-locations)\n(@R_by_Ryo, #TidyTuesday)",
+            title.position = c("center", "top"), title.size = 0.9,
+            fontfamily = "Garamond", fontface = "bold",
+            legend.text.size = 0.85, 
+            sepia.intensity = 0.1)
 
 
 ```
 
-cartograms :: `nc_cartogram()` >>> by number of each coffee chain!
 
-color gradients for Starbucks (shades of green), Tim Horton's, Dunkin' Donuts
-# >>> pull colors from logo?
+
+
+```{r}
+save_tmap(starbucks_cartogram, "starbucks_cartogram.png")
+```
+
+
+
+
