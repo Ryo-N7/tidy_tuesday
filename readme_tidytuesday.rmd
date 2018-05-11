@@ -16,6 +16,9 @@ Table of Contents       | (#TidyTuesday)
 [Week 1](#april-3):| College tuition data
 [Week 2](#april-10):| NFL salaries by position
 [Week 3](#april-16):| Causes of death across the world
+[Week 4](#april-23):| Salary differences by gender in Australia
+[Week 5](#april-30):| American Community Survey
+[Week 6](#may-7):| Coffee chains across the USA and the World
 
 
 ***
@@ -327,5 +330,86 @@ map2(paste0("april_16_week_3/boxplots/", nested_east_afr$year, ".jpg"), nested_e
 ![]()
 
 
+### April 23
+### Salary differences by gender in Australia
 
+### April 30
+### American Community Survey
+
+
+
+
+### May 7
+### Coffee chains across the USA and the World
+
+
+```{r}
+library(dplyr)
+library(readxl)
+library(sf)
+
+# read-in data
+starbucks_raw <- read_excel("../tidy_tuesday/may_7_week_6/week6_coffee_chains.xlsx", sheet = 1)
+
+# clean, select cols, filter USA, summarize
+starbucks_usa <- starbucks_raw %>% 
+  janitor::clean_names() %>% 
+  select(brand, city, state_province, country, longitude, latitude) %>% 
+  filter(country == "US") %>% 
+  group_by(state_province) %>% 
+  summarize(count = n()) %>% 
+  ungroup()
+
+# grab geometries of USA from tigris pkg, turn into sf
+states_sf <- tigris::states(cb = TRUE) %>% 
+  st_as_sf() %>% 
+  select(STUSPS, NAME, geometry) %>% 
+  filter(!STUSPS %in% c("VI", "MP", "GU", "PR", "AS")) # filter out territories and Puerto Rico
+
+# join with starbucks data
+starbucks_sf <- states_sf %>% left_join(starbucks_usa, by = c("STUSPS" = "state_province"))
+
+# remove Alaska and Hawaii... try to rescale and put them back in another time
+starbucks_sf2 <- starbucks_sf %>% filter(!NAME %in% c("Alaska", "Hawaii"))
+
+# change crs to one nc_cartogram() expects (sf compatibility for cartogram pkg coming soon i think...)
+starb_cartogram <- st_transform(starbucks_sf2, crs = 2163)
+
+# change back into sp object for nc_cartogram()
+starb_sp <- as(starb_cartogram, "Spatial")
+
+# construct non-contiguous area cartogram, area weighed by "count" var 
+library(cartogram)
+starb_cartogram <- nc_cartogram(starb_sp, weight = "count") # k = 1 is default
+
+# Sequential single hue color palette :: http://colorbrewer2.org/#type=sequential&scheme=Greens&n=5
+greenpal <- c('#edf8e9','#bae4b3','#74c476','#31a354','#006d2c')
+
+
+# add "kmeans" process for better class intervals for the colors
+# (California is still in their own category but best I can do with such big outliers)
+# Texas has x2 the amount of Starbucks as NY, WA, and FL but size relative only to CA?
+# can also use hclust, kmeans, quantile, jenks to varying success
+# legend.reverse for HIGH values on TOP, slight sepia to offset white glare?
+# fiddle with inner.margins to fit legend and small title
+library(tmap)
+
+starbucks_cartogram <- tm_shape(starb_cartogram) + 
+  tm_borders("grey10") +
+  tm_fill(title = "", "count", 
+          palette = greenpal, 
+          style = "kmeans",
+          legend.reverse = TRUE) +
+  tm_layout(inner.margins = c(.04,.02, .08, .02),
+            main.title = "Number of Starbucks across the United States",
+            title = "(Source: https://www.kaggle.com/starbucks/store-locations)\n(@R_by_Ryo, #TidyTuesday)",
+            title.position = c("center", "top"), title.size = 0.9,
+            fontfamily = "Garamond", fontface = "bold",
+            legend.text.size = 0.85, 
+            sepia.intensity = 0.2)
+
+starbucks_cartogram
+
+save_tmap(starbucks_cartogram, "starbucks_cartogram.png")
+```
 
