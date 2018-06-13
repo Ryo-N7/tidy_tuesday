@@ -19,7 +19,7 @@ library(tidyr)
 library(ggplot2)
 library(readr)
 
-acs_survey <- read_csv("april_30_week_5/acs2015_county_data.csv")
+acs_survey <- read_csv("../april_30_week_5/acs2015_county_data.csv")
 
 glimpse(acs_survey)
 
@@ -29,8 +29,6 @@ acs_survey <- acs_survey %>% gather(key = "ethnicity", value = "percentage", His
 
 
 ```
-
-
 
 
 
@@ -58,4 +56,54 @@ c_map <- fortify(counties_map_data, region = "fips")
 
 
 ```
+
+
+
+Aidan Boland's TT Viz :: https://twitter.com/AidoBo/status/991338257391804416
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(maps)
+
+counties <- map_data("county")
+
+acs_survey <- acs_survey %>% mutate(County = tolower(County),
+                                    State = tolower(State))
+
+all_county <- counties %>% inner_join(acs_survey, by = c("subregion" = "County",
+                                                         "region" = "State"))
+
+
+glimpse(all_county)
+
+
+county_plot <- function(x) {
+  
+  all_county$x <- all_county[, x]
+  
+  
+  counties %>% 
+    ggplot(aes(x = long, y = lat, group = group)) +
+    coord_fixed(1.3) +
+    geom_polygon(data = all_county, aes(fill = x), color = "grey30", size = 0.05) +
+    labs(fill = x) +
+    scale_fill_distiller(palette = "Spectral") +
+    theme_void()
+
+}
+
+county_plot("Unemployment")
+county_plot("Income")
+county_plot("Asian")
+county_plot("Poverty")
+
+
+```
+
+
+
+
+
 

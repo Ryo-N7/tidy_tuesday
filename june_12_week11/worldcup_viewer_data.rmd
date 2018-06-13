@@ -1,0 +1,205 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "June 12, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(grid)
+
+worldcup_raw <- 
+  read_csv(
+    "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/week11_fifa_audience.csv") %>% 
+  select(-X1) # row.names = F??
+
+worldcup_confed_sum <- worldcup_raw %>% 
+  add_count(country) %>% 
+  group_by(confederation) %>% 
+  summarize_if(is.numeric, sum) %>% 
+  ungroup() %>% 
+  mutate(total_members = sum(n),
+         perc_members = (n / total_members) * 100,
+         perc_members = perc_members %>% round(1)) %>% 
+  select(-n, -total_members) %>% 
+  gather(key = share_var, value = value, -confederation)
+
+#
+worldcup_confed_sum <- worldcup_raw %>% 
+  count(confederation) %>% 
+  group_by(confederation) %>% 
+  summarize_if(is.numeric, sum) %>% 
+  ungroup() %>% 
+  mutate(total_members = sum(n),
+         perc_members = (n / total_members) * 100,
+         perc_members = perc_members %>% round(1)) %>% 
+  select(-n, -total_members) %>% 
+  gather(key = share_var, value = value, -confederation)
+
+glimpse(worldcup_confed_sum)
+
+# order variables as factors for the plot
+worldcup_confed_sum <- worldcup_confed_sum %>% 
+  mutate(share_var = share_var %>% as_factor(),
+         share_var = share_var %>% fct_relevel("perc_members", "population_share",
+                                               "tv_audience_share", "gdp_weighted_share"))
+
+worldcup_confed_sum <- worldcup_confed_sum %>% 
+  mutate(confederation = confederation %>% as_factor(),
+         confederation = confederation %>% fct_relevel("OFC", "CAF", "CONMEBOL", 
+                                                       "CONCACAF", "AFC", "UEFA"))
+
+
+```
+
+
+
+
+FiveThirtyEight Heatmap:
+
+```{r fig.height=6, fig.width=10}
+
+perc_labs <- c("FIFA MEMBERS", "GLOBAL \nPOPULATION",
+               "WORLD CUP TV \nAUDIENCE", "GDP-WEIGHTED \nTV AUDIENCE")
+
+confed_labs <- c("OFC (Oceania)", "CAF (Africa)", "CONMEBOL (S. America)",
+                 "CONCACAF (N. America)", "AFC (Asia)", "UEFA (Europe)")
+
+p <- 
+  ggplot(worldcup_confed_sum,
+         aes(share_var, confederation, 
+             fill = value)) +
+  geom_tile(color = "lightgrey") +
+  scale_fill_gradient(low = "#e5f5e0", high = "#31a354") + #  mid = "#a1d99b"
+  geom_text(aes(share_var, confederation, label = paste0(value, "%")), fontface = "bold") +
+  theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        text = element_text(face = "bold"),
+        axis.title = element_text(),
+        axis.title.x.top = element_text(margin = margin(b = 10)),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(hjust = 0),
+        #plot.title = element_text(hjust = -0.2, size = 8, vjust = -1.2),
+        plot.margin = rep(grid::unit(0.75, "cm"), 4)
+        #axis.ticks = element_blank(),
+        #panel.grid.major = element_line()) +
+        #axis.title.y = element_text(angle = 30, vjust = 1.15, hjust = 10)) +
+        ) +
+  scale_x_discrete(position = "top", expand = c(0, 0),
+                   labels = perc_labs) +
+  #ggtitle("Confederation") +
+  labs(x = "In 2010, Share of...", y = "") + 
+  scale_y_discrete(expand = c(0, 0),
+                   labels = confed_labs) +
+  #geom_text(label = "Confederation", x = -0.2, y = 4) +
+  annotation_custom(grob = textGrob(
+    label = expression(bold("Confederation")), 
+    gp = gpar(cex = 1.0, fontface = "bold", hjust = 0)),
+                    ymin = 6.66, ymax = 6.66,
+                    xmin = 0.07, xmax = 0.07) +
+  annotation_custom(grob = linesGrob(gp = gpar(size = 1.5)), 
+                    xmin = 0.5, xmax = 4.5, ymin = 7, ymax = 7) + # top bar
+  annotation_custom(grob = linesGrob(), 
+                    xmin = -0.22, xmax = 4.5, ymin = 6.5, ymax = 6.5) # x-axis bar
+
+# annotate(geom = 'segment', y = Inf, yend = Inf, color = 'blue', x = -Inf, xend = Inf, size = 4)
+
+pt <- ggplot_gtable(ggplot_build(p))
+pt$layout$clip[pt$layout$name == "panel"] <- "off"
+
+grid.draw(pt)
+
+plot(pt)
+
+
+```
+
+
+
+
+```{r}
+
+glimpse(worldcup_raw)
+
+glimpse(worldcup_confed_sum)
+
+
+worldcup_raw %>% arrange(desc(tv_audience_share))
+
+
+library(rvest)
+library(janitor)
+
+url <- "https://en.wikipedia.org/wiki/2010_FIFA_World_Cup"
+
+wc_2010_raw <- url %>% 
+  read_html() %>% 
+  html_nodes(".mw-parser-output > div:nth-child(29) > table:nth-child(1)") %>% 
+  html_text()
+
+# .mw-parser-output > div:nth-child(29) > table:nth-child(1)
+
+wc_2010_raw %>% 
+  str_remove_all("\n") %>% 
+  str_remove_all("\\([^()]+\\)") %>% # get rid of () and those with contents therein
+  str_remove_all("[A-Z]{3,}") %>%    # get rid of confed names (All Caps longer than 3)
+  str_replace("North Korea", "North_Korea") %>% 
+  str_replace("South Korea", "South_Korea") %>% 
+  str_replace("United States", "United_States") %>% 
+  str_replace("Ivory Coast", "Ivory_Coast") %>% 
+  str_replace("New Zealand", "New_Zealand") %>% 
+  str_replace("South Africa", "South_Africa") %>% 
+  str_trim()
+  str_replace("\\s+", " ") %>% 
+  str_split(" ")
+
+wc_2010_tab <- "https://en.wikipedia.org/wiki/2010_FIFA_World_Cup_qualification" %>% 
+  read_html() %>% 
+  html_nodes("table.wikitable:nth-child(13)") %>% 
+  html_table()
+
+wc_2010_tab <- wc_2010_tab %>% flatten_df()
+
+class(wc_2010_tab)
+glimpse(wc_2010_tab)
+
+
+```
+
+
+
+```{r}
+library(gghighlight)
+
+wc_2010_teams <- wc_2010_tab %>% pull(Team)
+
+worldcup_raw %>% 
+  mutate(wc_2010 = if_else(country %in% wc_2010_teams, T, F)) %>% 
+  ggplot(aes(x = population_share/100, 
+           y = tv_audience_share/100)) +
+  geom_point(aes(size = gdp_weighted_share/100, 
+                 color = confederation)) +
+  scale_x_sqrt(labels = scales::percent) +
+  scale_y_sqrt(labels = scales::percent) 
+
+
+
+```
+
+
+
+
+
+
+
+
+
+

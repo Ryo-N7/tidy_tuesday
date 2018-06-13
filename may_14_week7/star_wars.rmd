@@ -1,0 +1,48 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "May 14, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Star Wars movies survey
+
+```{r}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+star_wars_raw <- read_csv("StarWars.csv")
+
+
+```
+
+```{r}
+glimpse(star_wars_raw)
+
+star_wars_raw %>% janitor::clean_names() %>% trimws() %>% glimpse()
+
+star_wars_unite <- star_wars_raw %>% 
+  unite("movies_watched", 
+        c(`Which of the following Star Wars films have you seen? Please select all that apply.`, 
+          "X5", "X6", "X7", "X8", "X9"), sep = ", ") %>% 
+  unite("preference_rank",
+        c(`Please rank the Star Wars films in order of preference with 1 being your favorite film in the franchise and 6 being your least favorite film.`,
+          "X11", "X12", "X13", "X14", "X15"), sep = ", ") %>% glimpse()
+
+star_wars_unite <- star_wars_unite %>% 
+  mutate(movies_watched = movies_watched %>% as.list(),
+         preference_rank = preference_rank %>% as.list()) %>% 
+  glimpse()
+
+star_wars_unite %>% select(movies_watched)
+
+# ignore favorable - unfavorable Qs >>> filter them out into separate df?
+
+```
+
