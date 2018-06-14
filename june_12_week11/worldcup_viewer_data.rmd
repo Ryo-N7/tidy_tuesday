@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(ggthemes)
+library(ggrepel)
 library(grid)
 
 worldcup_raw <- 
@@ -163,7 +164,7 @@ glimpse(wc_2010_tab)
 
 
 ```{r}
-library(gghighlight)
+library(ggrepel)
 
 wc_2010_teams <- wc_2010_tab %>% pull(Team)
 
@@ -247,6 +248,11 @@ worldcup_raw %>%
 
 
 ```{r}
+library(tidyverse)
+library(ggthemes)
+library(ggrepel)
+library(grid)
+
 # Calculate football player share (Registered/Unregistered)
 
 # registered + unregistered, IN 1000s
@@ -281,19 +287,258 @@ worldcup_confed <- worldcup_raw %>%
          perc_members = perc_members %>% round(1)) %>% 
   select(-n, -total_members)
 
-worldcup_confed %>% 
+worldcup_confed <- worldcup_confed %>% 
   mutate(players = players,
          total_pop = pop_2007,
          total_players = total_players,
          players_per_pop_1000 = (players / total_pop) * 1000, # player per capita (1000 people)
-         players_share = players_per_pop_1000 / sum(players_per_pop_1000)) %>% 
-  ggplot(aes(x = players_share, y = tv_audience_share)) +
+         players_share = players_per_pop_1000 / sum(players_per_pop_1000) * 100)  %>% 
+  mutate(image = "https://d30y9cdsu7xlg0.cloudfront.net/png/2034-200.png")
+
+# plot
+
+worldcup_confed %>% 
+  ggplot(aes(x = players_share / 100, 
+             y = tv_audience_share / 100)) +
   geom_point(aes(size = players_per_pop_1000)) +
-  geom_label(aes(label = confederation), nudge_x = 0.05, nudge_y = 0.05)
+  geom_label_repel(aes(label = confederation), nudge_x = 0.02, nudge_y = 0.05) +
+  scale_y_sqrt(labels = scales::percent,
+               breaks = scales::pretty_breaks()
+               
+               ) +
+  scale_x_sqrt(labels = scales::percent,
+               breaks = scales::pretty_breaks()
+               ) +
+  theme_solarized() +
+  theme(legend.position = "none") +
+  labs(x = "Share of Players per Capita \n (1 Player per 1000 people)",
+       y = "Share of TV Audience",
+       caption = "Source: FiveThirtyEight.com")
 
 # players per pop
 
 ```
+
+```{r}
+worldcup_confed %>% 
+  ggplot(aes(x = players_share / 100, 
+             y = tv_audience_share / 100)) +
+  geom_point(aes(size = players_per_pop_1000)) +
+  geom_label(aes(label = confederation), nudge_x = 0.02, nudge_y = 0.05) +
+  scale_y_continuous(labels = scales::percent,
+               breaks = scales::pretty_breaks()
+               
+               ) +
+  scale_x_continuous(labels = scales::percent,
+               breaks = scales::pretty_breaks(),
+               expand = c(0, 0)
+               ) +
+  theme_solarized() +
+  theme(legend.position = "none") +
+  labs(x = "Share of Players per Capita (1000 people)",
+       y = "Share of TV Audience",
+       caption = "Source: FiveThirtyEight.com")
+
+
+
+library(ggimage)
+library(extrafont)
+library(hrbrthemes)
+loadfonts()
+
+# there is a better way to do this with case_when() but whatever it's 3AM.
+confed_labs <- c("AFC (Asia)", "CAF (Africa)", "CONCACAF (N. America)",
+                 NA, NA , NA)
+
+confed_labs2 <- c(NA, NA , NA,
+                  "CONMEBOL (S. America)", "OFC (Oceania)", "UEFA (Europe)")
+
+worldcup_confed %>% 
+  ggplot(aes(x = players_share / 100, 
+             y = tv_audience_share / 100)) +
+  geom_image(aes(image = image), size = 0.05) +
+  geom_label_repel(aes(label = confed_labs), 
+                   family = "Roboto Condensed",
+                   nudge_x = 0.02, nudge_y = -0.05,
+                   force = 20) +
+  geom_label_repel(aes(label = confed_labs2), 
+                   family = "Roboto Condensed",
+                   nudge_x = 0.02, nudge_y = 0.045,
+                   force = 20) +
+  scale_y_sqrt(labels = scales::percent,
+               breaks = scales::pretty_breaks(5)
+               
+               ) +
+  scale_x_sqrt(labels = scales::percent,
+               breaks = scales::pretty_breaks(5),
+               limits = c(NA, 0.27)) +
+  theme_ipsum() +
+  theme(
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    title = "",
+    subtitle = "Players = Unregistered & Registered, Male & Female",
+    x = "Share of Players per Capita \n (1 Player per 1000 people)",
+    y = "Share of TV Audience",
+    caption = "Source: FiveThirtyEight.com") +
+  annotate("text", x = 0.085, y = 0.1, 
+           label = "AFC is the clear outlier,\nmost likely due to India & China",
+           family = "Roboto Condensed")
+
+```
+
+
+```{r fig.height=6, fig.width=8}
+
+worldcup_confed2 <- worldcup_confed %>% 
+  mutate(image = "https://d30y9cdsu7xlg0.cloudfront.net/png/43563-200.png")
+
+# 1 "http://extras.mnginteractive.com/live/media/site27/2017/0928/20170928_093500_Soccer%20ball.png"
+# 2 "https://d30y9cdsu7xlg0.cloudfront.net/png/43563-200.png"
+
+worldcup_confed2 %>% 
+  ggplot(aes(x = players_share / 100, 
+             y = tv_audience_share / 100)) +
+  geom_image(aes(image = image), size = 0.06) +
+  geom_label_repel(aes(label = confed_labs), 
+                   family = "Trebuchet MS",
+                   nudge_x = 0.02, nudge_y = -0.06,
+                   force = 20) +
+  geom_label_repel(aes(label = confed_labs2), 
+                   family = "Trebuchet MS",
+                   nudge_x = 0.03, nudge_y = 0.07,
+                   force = 20) +
+  scale_y_sqrt(labels = scales::percent,
+               breaks = scales::pretty_breaks(5),
+               limits = c(NA, 0.5)
+               ) +
+  scale_x_sqrt(labels = scales::percent,
+               breaks = scales::pretty_breaks(5),
+               limits = c(NA, 0.27)) +
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Trebuchet MS", color = "black"),
+    panel.grid.minor = element_blank(),
+    plot.subtitle = element_text(size = 8, family = "Arial Narrow"),
+    axis.text = element_text(size = 12)
+  ) +
+  labs(
+    title = "Share of Players per Capita & TV Audience (2010 World Cup)\nby Football Confederations",
+    subtitle = "Players: Total of Unregistered & Registered, Male & Female",
+    x = "Share of Players per Capita \n (1 Player per 1000 people)",
+    y = "Share of TV Audience",
+    caption = "Source: FiveThirtyEight.com & FIFA Big Count (2006)") +
+  annotate("text", x = 0.088, y = 0.15, 
+           label = "AFC (Asia) is the clear outlier,\nmost likely due to India & China",
+           family = "Trebuchet MS", fontface = "bold")
+
+```
+
+
+
+
+
+
+
+
+```{r fig.height=6, fig.width=8}
+library(tidyverse)
+library(ggthemes)
+library(ggrepel)
+library(ggimage)
+library(extrafont)
+# loadfonts()
+
+worldcup_raw <- 
+  read_csv(
+    "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/week11_fifa_audience.csv") %>% 
+  select(-X1) 
+
+# Calculate football player share (Registered/Unregistered, Male/Female)
+# data from FIFA Big Count (2006)
+
+# registered + unregistered, male + female IN 1000s
+total_players <- (38287 + 226265) * 1000
+
+afc <- 4040 + 81136
+
+caf <- 3101 + 43199
+
+concacaf <- 6121 + 36988
+
+conmebol <- 3759 + 24018
+
+ofc <- 241 + 301
+
+uefa <- 21025 + 40622
+
+# as one vector in ordnung
+players <- c(afc, caf, concacaf, conmebol, ofc, uefa) * 1000
+
+# 2006 pop, also in 1000s
+pop_2006 <- c(3870439, 909575, 518613, 374235, 12252, 844677) * 1000
+
+# new dataframe
+worldcup_confed <- worldcup_raw %>% 
+  add_count(country) %>% 
+  group_by(confederation) %>% 
+  summarize_if(is.numeric, sum) %>% 
+  ungroup() %>% 
+  mutate(players = players,
+         total_pop = pop_2006,
+         total_players = total_players,
+         players_per_pop_1000 = (players / total_pop) * 1000, # player per capita (1000 people)
+         players_share = players_per_pop_1000 / sum(players_per_pop_1000) * 100) 
+
+# add soccer ball image
+worldcup_confed <- worldcup_confed %>% 
+  mutate(image = "https://d30y9cdsu7xlg0.cloudfront.net/png/43563-200.png")
+
+# PLOT
+worldcup_confed %>% 
+  ggplot(aes(x = players_share / 100, 
+             y = tv_audience_share / 100)) +
+  geom_image(aes(image = image), size = 0.06) +
+  geom_label_repel(aes(label = confed_labs), 
+                   family = "Trebuchet MS",
+                   nudge_x = 0.02, nudge_y = -0.06,
+                   force = 20) +
+  geom_label_repel(aes(label = confed_labs2), 
+                   family = "Trebuchet MS",
+                   nudge_x = 0.03, nudge_y = 0.07,
+                   force = 20) +
+  scale_y_sqrt(labels = scales::percent,
+               breaks = scales::pretty_breaks(5),
+               limits = c(NA, 0.5)
+               ) +
+  scale_x_sqrt(labels = scales::percent,
+               breaks = scales::pretty_breaks(5),
+               limits = c(NA, 0.27)) +
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Trebuchet MS", color = "black"),
+    panel.grid.minor = element_blank(),
+    plot.subtitle = element_text(size = 8, family = "Arial Narrow"),
+    axis.text = element_text(size = 12)
+  ) +
+  labs(
+    title = "Share of Players per Capita & TV Audience (2010 World Cup)\nby Football Confederations",
+    subtitle = "Players: Total of Unregistered & Registered, Male & Female",
+    x = "Share of Players per Capita \n (1 Player per 1000 people)",
+    y = "Share of TV Audience",
+    caption = "Source: FiveThirtyEight.com & FIFA Big Count (2006)") +
+  annotate("text", x = 0.088, y = 0.15, 
+           label = "AFC (Asia) is the clear outlier,\nmost likely due to India & China",
+           family = "Trebuchet MS", fontface = "bold")
+
+```
+
+
+
+
+
+
 
 
 
