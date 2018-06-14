@@ -19,7 +19,7 @@ library(grid)
 worldcup_raw <- 
   read_csv(
     "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/week11_fifa_audience.csv") %>% 
-  select(-X1) # row.names = F??
+  select(-X1) 
 
 worldcup_confed_sum <- worldcup_raw %>% 
   add_count(country) %>% 
@@ -32,40 +32,19 @@ worldcup_confed_sum <- worldcup_raw %>%
   select(-n, -total_members) %>% 
   gather(key = share_var, value = value, -confederation)
 
-#
-worldcup_confed_sum <- worldcup_raw %>% 
-  count(confederation) %>% 
-  group_by(confederation) %>% 
-  summarize_if(is.numeric, sum) %>% 
-  ungroup() %>% 
-  mutate(total_members = sum(n),
-         perc_members = (n / total_members) * 100,
-         perc_members = perc_members %>% round(1)) %>% 
-  select(-n, -total_members) %>% 
-  gather(key = share_var, value = value, -confederation)
-
-glimpse(worldcup_confed_sum)
-
-# order variables as factors for the plot
+# re-order variables as factors for the plot
 worldcup_confed_sum <- worldcup_confed_sum %>% 
   mutate(share_var = share_var %>% as_factor(),
          share_var = share_var %>% fct_relevel("perc_members", "population_share",
                                                "tv_audience_share", "gdp_weighted_share"))
-
+# re-order confederations
 worldcup_confed_sum <- worldcup_confed_sum %>% 
   mutate(confederation = confederation %>% as_factor(),
          confederation = confederation %>% fct_relevel("OFC", "CAF", "CONMEBOL", 
                                                        "CONCACAF", "AFC", "UEFA"))
-
-
-```
-
-
-
-
-FiveThirtyEight Heatmap:
-
-```{r fig.height=6, fig.width=10}
+# have % label ONLY for UEFA
+worldcup_confed_sum <- worldcup_confed_sum %>% 
+  mutate(val2 = if_else(confederation == "UEFA", paste0(value, "%"), paste0(value)))
 
 perc_labs <- c("FIFA MEMBERS", "GLOBAL \nPOPULATION",
                "WORLD CUP TV \nAUDIENCE", "GDP-WEIGHTED \nTV AUDIENCE")
@@ -73,52 +52,59 @@ perc_labs <- c("FIFA MEMBERS", "GLOBAL \nPOPULATION",
 confed_labs <- c("OFC (Oceania)", "CAF (Africa)", "CONMEBOL (S. America)",
                  "CONCACAF (N. America)", "AFC (Asia)", "UEFA (Europe)")
 
+```
+
+FiveThirtyEight Heatmap:
+
+```{r fig.height=6, fig.width=10}
+
+# Different greens: #00CD00 #008B00 #e5f5e0 #31a354)
 p <- 
   ggplot(worldcup_confed_sum,
          aes(share_var, confederation, 
              fill = value)) +
   geom_tile(color = "lightgrey") +
-  scale_fill_gradient(low = "#e5f5e0", high = "#31a354") + #  mid = "#a1d99b"
-  geom_text(aes(share_var, confederation, label = paste0(value, "%")), fontface = "bold") +
-  theme_fivethirtyeight() +
+  scale_fill_gradient(low = "#e5f5e0", high = "#008B00") + #  mid = "#a1d99b"
+  geom_text(aes(label = val2, fontface = "bold"), size = 5) +
+  theme_fivethirtyeight() +                   # erases axis.title, text font not the actual one?
   theme(legend.position = "none",
-        text = element_text(face = "bold"),
-        axis.title = element_text(),
+        text = element_text(face = "bold", color = "black"),
+        axis.title = element_text(),          # to add axis.title back into plot...
         axis.title.x.top = element_text(margin = margin(b = 10)),
         axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(hjust = 0),
-        #plot.title = element_text(hjust = -0.2, size = 8, vjust = -1.2),
+        axis.text.y = element_text(hjust = 0, size = 12),
         plot.margin = rep(grid::unit(0.75, "cm"), 4)
-        #axis.ticks = element_blank(),
-        #panel.grid.major = element_line()) +
-        #axis.title.y = element_text(angle = 30, vjust = 1.15, hjust = 10)) +
         ) +
   scale_x_discrete(position = "top", expand = c(0, 0),
                    labels = perc_labs) +
-  #ggtitle("Confederation") +
-  labs(x = "In 2010, Share of...", y = "") + 
+  labs(x = "IN 2010, SHARE OF ...", y = "") + 
   scale_y_discrete(expand = c(0, 0),
                    labels = confed_labs) +
-  #geom_text(label = "Confederation", x = -0.2, y = 4) +
   annotation_custom(grob = textGrob(
-    label = expression(bold("Confederation")), 
-    gp = gpar(cex = 1.0, fontface = "bold", hjust = 0)),
+    label = expression(bold("CONFEDERATION")), # use bold() inside expression() to get BOLD text
+    gp = gpar(cex = 1.0, fontface = "bold", hjust = 0)), # also need to specify in fontface as well
                     ymin = 6.66, ymax = 6.66,
-                    xmin = 0.07, xmax = 0.07) +
-  annotation_custom(grob = linesGrob(gp = gpar(size = 1.5)), 
-                    xmin = 0.5, xmax = 4.5, ymin = 7, ymax = 7) + # top bar
+                    xmin = -0.23, xmax = -0.23) +     
   annotation_custom(grob = linesGrob(), 
-                    xmin = -0.22, xmax = 4.5, ymin = 6.5, ymax = 6.5) # x-axis bar
-
-# annotate(geom = 'segment', y = Inf, yend = Inf, color = 'blue', x = -Inf, xend = Inf, size = 4)
+                    xmin = 0.5, xmax = 4.5, ymin = 7, ymax = 7) + # top bar
+  annotation_custom(grob = linesGrob(gp = gpar(lwd = 3)),  
+                    xmin = -0.64, xmax = 4.5, ymin = 6.5, ymax = 6.5) # x-axis bar
 
 pt <- ggplot_gtable(ggplot_build(p))
-pt$layout$clip[pt$layout$name == "panel"] <- "off"
+pt$layout$clip[pt$layout$name == "panel"] <- "off"  # so stuff outside the plot can be shown.
 
-grid.draw(pt)
+grid.newpage()
+grid.draw(pt) # doesn't show anything...?
 
-plot(pt)
+plot(pt) # use plot instead i guess...
 
+#g <- plot(pt) 
+
+# took a gabillion times to get the positioning of the grobs just right but ... worth it? eh.
+
+#ggsave(file = "recreated_538_heatmap.png", plot(pt))
+
+#g_g <- save(pt, file = "grobby.png")
 
 ```
 
@@ -197,9 +183,117 @@ worldcup_raw %>%
 
 
 
+```{r}
+# from FIFA Big Count (2006):
+# % of population that are involved in football (m/f players, referees, officials).
+players_perc <- c(2.22, 5.16, 8.53, 7.47, 4.68, 7.59)
 
 
 
+
+worldcup_raw %>% 
+  add_count(country) %>% 
+  group_by(confederation) %>% 
+  summarize_if(is.numeric, sum) %>% 
+  ungroup() %>% 
+  mutate(total_members = sum(n),
+         perc_members = (n / total_members) * 100,
+         perc_members = perc_members %>% round(1)) %>% 
+  select(-n, -total_members) %>% 
+  mutate(players_share = players_perc) %>% 
+  ggplot(aes(x = players_perc / 100, 
+             y = tv_audience_share / 100)) +
+  geom_point(aes(size = population_share)) +
+  geom_label(aes(label = confederation), nudge_x = 0.02, nudge_y = 0.02) +
+  scale_y_sqrt(labels = scales::percent,
+               expand = c(0, 0),
+               limits = c(0, 0.5),
+               breaks = c(0.1, 0.2, 0.3, 0.4, 0.5)) +
+  scale_x_sqrt(labels = scales::percent, 
+               expand = c(0, 0),
+               limits = c(0, 0.12),
+               breaks = c(0.02, 0.04, 0.06, 0.08, 0.1)) +
+  annotate("text", x = 0.01, y = 0.05, 
+           label = "AFC is clear outlier,\nmost likely due to India & China") +
+  theme_solarized() +
+  labs(caption = "Player data from 2007...")
+
+
+```
+
+
+
+
+
+```{r}
+worldcup_raw %>% 
+  add_count(country) %>% 
+  group_by(confederation) %>% 
+  summarize_if(is.numeric, sum) %>% 
+  ungroup() %>% 
+  mutate(total_members = sum(n),
+         perc_members = (n / total_members) * 100,
+         perc_members = perc_members %>% round(1)) %>% 
+  select(-n, -total_members) %>% 
+  mutate(players_share = players_perc) %>% 
+  ggplot(aes(x = players_perc / 100, 
+             y = (tv_audience_share / 100) / (population_share / 100))) +
+  geom_point(aes(size = population_share)) +
+  geom_label(aes(label = confederation), nudge_x = 0.01, nudge_y = 0.01)
+
+
+```
+
+
+
+```{r}
+# Calculate football player share (Registered/Unregistered)
+
+# registered + unregistered, IN 1000s
+total_players <- (38287 + 226265) * 1000
+
+afc <- 4040 + 81136
+
+caf <- 3101 + 43199
+
+concacaf <- 6121 + 36988
+
+conmebol <- 3759 + 24018
+
+ofc <- 241 + 301
+
+uefa <- 21025 + 40622
+
+players <- c(afc, caf, concacaf, conmebol, ofc, uefa) * 1000
+
+# 2007 pop
+
+pop_2007 <- c(3870439, 909575, 518613, 374235, 12252, 844677) * 1000
+
+
+worldcup_confed <- worldcup_raw %>% 
+  add_count(country) %>% 
+  group_by(confederation) %>% 
+  summarize_if(is.numeric, sum) %>% 
+  ungroup() %>% 
+  mutate(total_members = sum(n),
+         perc_members = (n / total_members) * 100,
+         perc_members = perc_members %>% round(1)) %>% 
+  select(-n, -total_members)
+
+worldcup_confed %>% 
+  mutate(players = players,
+         total_pop = pop_2007,
+         total_players = total_players,
+         players_per_pop_1000 = (players / total_pop) * 1000, # player per capita (1000 people)
+         players_share = players_per_pop_1000 / sum(players_per_pop_1000)) %>% 
+  ggplot(aes(x = players_share, y = tv_audience_share)) +
+  geom_point(aes(size = players_per_pop_1000)) +
+  geom_label(aes(label = confederation), nudge_x = 0.05, nudge_y = 0.05)
+
+# players per pop
+
+```
 
 
 
