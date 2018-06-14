@@ -495,8 +495,15 @@ worldcup_confed <- worldcup_raw %>%
 worldcup_confed <- worldcup_confed %>% 
   mutate(image = "https://d30y9cdsu7xlg0.cloudfront.net/png/43563-200.png")
 
+# there is a better way to do this with case_when() but whatever it's 3AM.
+confed_labs <- c("AFC (Asia)", "CAF (Africa)", "CONCACAF (N. America)",
+                 NA, NA , NA)
+
+confed_labs2 <- c(NA, NA , NA,
+                  "CONMEBOL (S. America)", "OFC (Oceania)", "UEFA (Europe)")
+
 # PLOT
-worldcup_confed %>% 
+p <- worldcup_confed %>% 
   ggplot(aes(x = players_share / 100, 
              y = tv_audience_share / 100)) +
   geom_image(aes(image = image), size = 0.06) +
@@ -531,6 +538,8 @@ worldcup_confed %>%
   annotate("text", x = 0.088, y = 0.15, 
            label = "AFC (Asia) is the clear outlier,\nmost likely due to India & China",
            family = "Trebuchet MS", fontface = "bold")
+
+ggsave(p, filename = "worldcup_tv_player.png")
 
 ```
 
