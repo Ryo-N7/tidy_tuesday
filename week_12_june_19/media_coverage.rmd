@@ -1,0 +1,79 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "June 19, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Media coverage 
+
+
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(ggrepel)
+library(ggimage)
+library(extrafont)
+# loadfonts()
+
+
+# mediacloud_trump.csv (Updated through 10/10/2017): number of headlines that mention Puerto Rico, Texas, and Florida, + headlines that mention those locations along with 'President' or 'Trump'.
+
+headline_trump_raw <- 
+  read_csv(
+    "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/week12_mediacloud_trump.csv")
+
+headline_trump_clean <- headline_trump_raw %>% 
+  janitor::clean_names() %>% 
+  rename_at(vars(contains("title")), 
+            funs(str_replace_all(., pattern = "title_", replacement = "")))
+
+headline_share <- headline_trump_clean %>% 
+  mutate(share_pr_trump = puerto_rico_and_trump_or_president / puerto_rico,
+         share_fl_trump = florida_and_trump_or_president / florida,
+         share_tx_trmp = texas_and_trump_or_president / texas) %>% 
+  select(date, contains("share")) %>% 
+  gather("location", "share_pct", -date) %>% 
+  replace_na(list(share_pct = 0))
+
+headline_share %>% 
+  ggplot(aes(x = date, y = share_pct * 100, fill = location)) +
+  geom_area(position = "identity") +   # position = "identity" so NOT STACK!!
+  ylim(c(0, 100))
+
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

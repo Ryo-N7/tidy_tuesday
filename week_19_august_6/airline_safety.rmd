@@ -1,0 +1,21 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "August 7, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(readr)
+
+airline_safety_raw <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/week19_airline_safety.csv")
+
+
+```
+

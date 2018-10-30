@@ -1,0 +1,34 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "September 12, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r warning=FALSE, message=FALSE}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggimage)
+```
+
+
+
+```{r}
+catdog_df <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018-09-11/cats_vs_dogs.csv") %>% select(-X1)
+```
+
+
+```{r}
+catdog_df %>% glimpse()
+```
+
+- double sided lolipop chart
+- cat/dog per capita map >>> cartograms?

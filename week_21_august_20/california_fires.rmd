@@ -1,0 +1,149 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "August 22, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r warning=FALSE, message=FALSE}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggridges)
+library(stringr)
+library(lubridate)
+library(forcats)
+library(gganimate)
+```
+
+
+
+
+```{r}
+calfire_damage_raw <- read_csv("https://raw.githubusercontent.com/BuzzFeedNews/2018-07-wildfire-trends/master/data/calfire_damage.csv")
+
+calfire_frap_raw <- read_csv("https://raw.githubusercontent.com/BuzzFeedNews/2018-07-wildfire-trends/master/data/calfire_frap.csv")
+
+us_fires_1_raw <- read_csv("https://raw.githubusercontent.com/BuzzFeedNews/2018-07-wildfire-trends/master/data/us_fires/us_fires_1.csv")
+
+```
+
+
+
+
+
+
+```{r}
+calfire_frap_raw %>% 
+  rename(year = year_) %>% 
+  mutate_at(vars(contains("date")), funs(lubridate::dmy)) %>% glimpse()
+
+# base R has a "month.abb" vector so you don't have to type out the months yourself
+month_names <- month.abb %>% 
+  as_data_frame() %>% 
+  mutate(num_month = seq(1:12))
+
+calfire_frap_clean <- calfire_frap_raw %>% 
+  rename(year = year_) %>% 
+  mutate(alarm_month = month(alarm_date)) %>% 
+  left_join(month_names, by = c("alarm_month" = "num_month")) %>% 
+  rename(month_abbv = value) %>% 
+  glimpse()
+
+calfire_frap_clean <- calfire_frap_clean %>% 
+  mutate(month_abbv = as_factor(month_abbv)) %>% 
+  mutate(month_abbv = fct_relevel(month_abbv, c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))) 
+
+levels(calfire_frap_clean$month_abbv)
+
+ggplot(calfire_frap_clean) +
+  geom_point(aes(y = month_abbv, x = gis_acres)) +
+  scale_y_discrete(limits = rev(levels(calfire_frap_clean$month_abbv)))
+
+
+calfire_frap_clean %>% 
+  ggplot(aes(x = gis_acres, y = month_abbv, fill = ..x..)) +
+  geom_density_ridges_gradient() +
+  scale_fill_gradientn(colors = RColorBrewer::brewer.pal(n = 5, name = "YlOrRd")) +
+  scale_y_discrete(limits = rev(levels(calfire_frap_clean$month_abbv))) +
+  scale_x_continuous(breaks = scales::pretty_breaks(5)) +
+  theme_minimal() +
+  theme(axis.title = element_blank()) 
+
+
+calfire_frap_clean %>% 
+  ggplot(aes(x = gis_acres, y = month_abbv, fill = gis_acres)) +
+  geom_density_ridges_gradient() +
+  scale_fill_gradientn(colors = RColorBrewer::brewer.pal(n = 5, name = "YlOrRd")) +
+  scale_y_discrete(limits = rev(levels(calfire_frap_clean$month_abbv))) +
+  scale_x_continuous(breaks = scales::pretty_breaks(5)) +
+  theme_minimal() +
+  theme(axis.title = element_blank()) 
+
+```
+
+
+```{r}
+calfire_frap_clean %>% 
+  filter(month_abbv == "Feb") %>% 
+  select(month_abbv, gis_acres, year, unit_id) %>% 
+  summarize(macres = max(gis_acres))
+```
+
+
+
+
+```{r}
+calfire_acres_sum <- calfire_frap_clean %>% 
+  filter(month_abbv != "NA") %>% 
+  group_by(month_abbv) %>% 
+  mutate(acres = mean(gis_acres, na.rm = TRUE)) %>% 
+  select(year, fire_name, cause, gis_acres, acres, alarm_date, alarm_month, month_abbv)
+
+# colorbrewer2.org >>> sequential 9 classes (single hue: reds)
+firered <- c('#fff5f0','#fee0d2','#fcbba1','#fc9272','#fb6a4a',
+             '#ef3b2c','#cb181d','#a50f15','#67000d')
+
+RColorBrewer::brewer.pal(n = 5, name = "YlOrRd") %>% glimpse()
+
+calfire_acres_sum %>% 
+  ggplot(aes(x = gis_acres, y = month_abbv, fill = ..x..)) +
+  geom_density_ridges_gradient() +
+  scale_fill_gradientn(colors = RColorBrewer::brewer.pal(n = 5, name = "YlOrRd")) +
+  scale_y_discrete(limits = rev(levels(calfire_acres_sum$month_abbv))) +
+  scale_x_continuous(breaks = scales::pretty_breaks(5), 
+                     labels = scales::comma,
+                     limits = c(0, 20000)) +
+  theme_minimal() +
+  theme(axis.title = element_blank()) 
+  
+
+calfire_acres_sum$acres %>% head()
+
+```
+
+
+
+
+
+```{r}
+
+
+```
+
+animation: across years? see how months UP or DOWN?
+
+
+
+
+
+
+draw a circle of an area of "shape_area" around the center long/lat point in us_fires_1_raw for CALIFORNIA?
