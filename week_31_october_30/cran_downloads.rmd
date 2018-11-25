@@ -51,6 +51,7 @@ library(tidyr)
 library(ggplot2)
 library(cranlogs)
 library(ggtextures) # devtools::install_github("clauswilke/ggtextures")
+library(scales)
 library(extrafont)
 loadfonts()
 
@@ -68,14 +69,37 @@ top_10_october_images <- top_10_october %>%
     "https://raw.githubusercontent.com/tidyverse/glue/master/man/figures/logo.png",
     "https://raw.githubusercontent.com/tidyverse/dplyr/master/man/figures/logo.png",
     "https://i.imgur.com/JYv9NTF.jpg",
-    "https://raw.githubusercontent.com/tidyverse/stringr/master/man/figures/logo.png"),
-    count_lab = count %>% scales::comma)
+    "https://raw.githubusercontent.com/tidyverse/stringr/master/man/figures/logo.png")) %>% 
+  mutate(count_lab = comma(count))
 
 # PLOT
 ggplot(top_10_october_images, 
        aes(x = reorder(package, -count), y = count, 
            image = image)) +
   geom_textured_col(img_width = unit(0.6, "null")) +
+  geom_text(aes(label = count_lab, family = "Roboto Condensed"), 
+            size = 3.5,
+            nudge_y = 25000) +
+  scale_y_continuous(expand = c(0, 0),
+                     limits = c(0, 1100000),
+                     labels = scales::comma) +
+  labs(title = "Top 10 Most Downloaded R Packages in the Past Month",
+       subtitle = "from CRAN: Sept. 28, 2018 - Oct. 29, 2018",
+       x = "Package", y = "# of Times Downloaded") +
+  theme_minimal() +
+  theme(text = element_text(family = "Roboto Condensed"),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12),
+        panel.grid.major.x = element_blank())
+```
+
+```{r}
+# isotype plot
+
+ggplot(top_10_october_images, 
+       aes(x = reorder(package, -count), y = count, 
+           image = image)) +
+  geom_isotype_col(img_height = grid::unit(100000, "native")) +
   geom_text(aes(label = count_lab, family = "Roboto Condensed"), 
             size = 3.5,
             nudge_y = 25000) +

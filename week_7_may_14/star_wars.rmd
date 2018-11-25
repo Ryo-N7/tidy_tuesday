@@ -12,10 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Star Wars movies survey
 
 ```{r}
-library(readr)
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+library(tidyverse)
 
 star_wars_raw <- read_csv("StarWars.csv")
 
@@ -43,6 +40,46 @@ star_wars_unite <- star_wars_unite %>%
 star_wars_unite %>% select(movies_watched)
 
 # ignore favorable - unfavorable Qs >>> filter them out into separate df?
+
+```
+
+
+
+
+```{r}
+star_wars_unite2 <- star_wars_unite %>% 
+  slice(-1) %>% 
+  filter(`Which character shot first?` != "I don't understand this question")
+  #mutate_all(funs(iconv(., from = "UTF-8", to = "ASCII//TRANSLIT")))
+
+star_wars_unite2 %>% 
+  transmute(
+    under30 = star_wars_unite2$Age == "18-29",
+    over60 = star_wars_unite2$Age == "> 60",
+    male = star_wars_unite2$Gender == "Male",
+    female = star_wars_unite2$Gender == "Female",
+    west_coast = star_wars_unite2$`Location (Census Region)` %in% c("Pacific", "Mountain")
+  ) %>% 
+  map(function(x) {
+    out <- table(shoot = star_wars_unite2$`Which character shot first?`, blah = x) %>% 
+      fisher.test(conf.level = 0.95)
+    out <- c(out$estimate, lower = out$conf.int[1], upper = out$conf.int[2])
+    return(out)
+  }) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  gather(key, value, -rowname) %>% 
+  spread(rowname, value) %>% 
+  ggplot(aes(y = key, x = `odds ratio`))+ 
+  geom_errorbarh(aes(xmin = lower, xmax = upper), size = .45, color = "#899DA4", height = 0.75) + 
+  geom_point(size = 4, color = "#DC863B") +
+  geom_vline(xintercept = 1, lty = 2, lwd = 1, color = "#C93312") + 
+  scale_x_continuous(
+    sec.axis = sec_axis(~ ., 
+                        breaks = c(0.65, 1.8), 
+                        labels = c("less likely\nto say 'Greedo shot first!'", 
+                                   "more likely\nto say 'Greedo shot first!'"))
+    )
 
 ```
 
