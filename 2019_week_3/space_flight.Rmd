@@ -1,0 +1,108 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "January 17, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+pacman::p_load(tidyverse, scales, lubridate, gghighlight)
+```
+
+
+```{r}
+launches_raw <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-01-15/launches.csv")
+
+agencies_raw <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-01-15/agencies.csv")
+
+```
+
+
+
+
+```{r}
+launches_raw %>% glimpse()
+agencies_raw %>% glimpse()
+
+launches_raw %>% 
+  glimpse()
+
+launches_raw %>% 
+  filter(state_code == "J") %>% 
+  mutate(success = if_else(category == "O", TRUE, FALSE)) %>% 
+  arrange(launch_year) %>% 
+  select(launch_year, type, state_code, agency_type, success) %>% 
+  group_by(launch_year, agency_type, type, success) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(launch_year, n, fill = success)) +
+  geom_col() +
+  gghighlight(agency_type == "private") + theme_minimal()
+  facet_wrap(~agency_type, ncol = 1) +
+  theme_minimal()
+
+```
+
+
+
+
+```{r}
+launches_raw %>% 
+  filter(state_code == "J") %>% 
+  ggplot(aes(launch_year)) +
+  geom_area(stat = "bin", fill = "red", bins = 50) +
+  scale_x_continuous(breaks = scales::pretty_breaks(20),
+                     limits = c(1960, 2018),
+                     expand = c(0, 0)) +
+  theme_minimal() + 
+  theme(panel.grid.minor.x = element_blank()) +
+  geom_text(aes(x = 1960, y = 3, hjust = 0,
+           label = "1963: Establishment of the National Aerospace Laboratory (NAL)"),
+           size = 2) +
+  annotate(geom = "segment")
+```
+
+
+
+
+
+```{r}
+launches_raw %>% 
+  filter(state_code == "J") %>% 
+  group_by(launch_year, type) %>% 
+  count() %>% 
+  #add_count(state_code) %>% 
+  ggplot(aes(x = launch_year, y = n, fill = type)) +
+  geom_col() +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+launches_jp_type <- launches_raw %>% 
+  filter(state_code == "J") %>% 
+  #arrange(launch_year) %>% 
+  #group_by(launch_year) %>% 
+  add_count(type) %>% 
+  mutate(agency_type = as_factor(agency_type),
+    type = as_factor(type),
+         type = fct_reorder(.f = type, .x = launch_date, 
+                                                .fun = min))
+
+cols <- c("private" = "red", state = "grey")
+
+launches_jp_type %>% 
+  ggplot(aes(launch_year, fct_rev(type), color = agency_type)) +
+  geom_jitter() +
+  scale_color_manual(values = cols, name = "Type of Agency") +
+  #scale_y_discrete(limits = rev(levels(launches_jp_type$type))) +
+  theme_minimal()
+```
+
