@@ -1,0 +1,646 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "4/23/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pacman::p_load(tidyverse, scales, janitor, gt, rvest, polite, glue, webshot)
+```
+
+
+
+
+```{r, eval=FALSE}
+tidy_anime <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-23/tidy_anime.csv")
+```
+
+```{r}
+tidy_anime <- readRDS("tidy_anime.RDS")
+
+glimpse(tidy_anime)
+```
+
+TV Shows ONLY and Movies ONLY
+
+TITLE:
+PICTURE: ![]()
+RANK
+POPULARITY
+Producer: TV emoji icon
+
+:Airing:
+FROM TO
+(date_format)
+
+Genre: emoji icon
+Genre average & + / - comparison
+Score: bold + icon    COLOR FILL
+Favorites >>> Star Icon or emoji?
+
+Synopsis >> link pop-out?
+
+Footnotes: ??? * if Anime original? Note if sequel?
+
+
+Chronological look at GUNDAM, Ghibli, Monogatari Series??
+
+
+```{r}
+tidy_anime %>% 
+  select(title_english, genre, rank, popularity, score, studio, start_date, end_date, synopsis)
+```
+
+```{r}
+gundam_raw <- tidy_anime %>% 
+  select(-related, -background, -premiered, -related, -members, -airing, -favorites,
+         -title_synonyms, -title_japanese, -producers, -status, -broadcast, -genre, -source, -rank, -popularity) %>% 
+  ## group by title and slice only top... otherwise 4593745 duplicate rows for each genre...
+  group_by(title_english) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  ## filter for Gundam in title, filter for TV, OVA, Movie
+  filter( str_detect(title_english, "Gundam"), type %in% c("TV", "OVA", "Movie")) %>% 
+  ## filter out non-main story stuff and random shorts
+  filter(!title_english %in% c("Mobile Suit Gundam SEED MSV Astray",
+                               "Mobile Suit Gundam 0083: The Afterglow Of Zeon",
+                               "Mobile Suit Gundam SEED Destiny Final Plus: The Chosen Future",
+                               "Mobile Suit Gundam Unicorn Perfectibility",
+                               "Mobile Suit Gundam Unicorn RE:0096",
+                               "Mobile Suit Gundam Wing: Operation Meteor",
+                               "Mobile Suit SD Gundam's Counterattack",
+                               "Mobile Suit SD Gundam Festival",
+                               "Musha, Knight, Commando: SD Gundam Emergency Sortie",
+                               "Mobile Suit Zeta Gundam: A New Translation - Heir to the Stars",
+                               "Mobile Suit Zeta Gundam: A New Translation II - Lovers",
+                               "Mobile Suit Zeta Gundam: A New Translation III - Love Is the Pulse of the Stars",
+                               "Mobile Suit Gundam 00 Special Edition",
+                               "∀ Gundam I: Earth Light",
+                               "∀ Gundam II: Moonlight Butterfly")) %>% 
+  select(-duration, -scored_by, -synopsis) %>% 
+  ## chronological order
+  arrange(start_date)
+```
+
+```{r}
+gundam_df <- gundam_raw %>% 
+  ## calculate mean score for entire-ish franchise
+  ## fill in end dates, for movies just fill with start_date
+  mutate(avg_score = mean(score) %>% round(digits = 2),
+         end_date = case_when(
+           title_english == "Gundam Build Fighters Try" ~ as.Date("2015-04-01"),
+           title_english == "Mobile Suit Gundam: Iron-Blooded Orphans 2nd Season" ~ as.Date("2017-04-02"),
+           title_english == "Mobile Suit Gundam Unicorn" ~ as.Date("2014-06-06"),
+           title_english == "Mobile Suit Gundam: The Origin" ~ as.Date("2018-05-05"),
+           type == "Movie" ~ start_date,
+           TRUE ~ end_date
+         ),
+         title_english = case_when(
+           lubridate::year(end_date) == 2000 ~ "Turn A Gundam",
+           TRUE ~ title_english
+         )) %>% 
+  ## create "decade" groupings for gt subheaders
+  ## create html link to MAL webpage
+  mutate(newscore = score - avg_score, 
+         end_year = lubridate::year(end_date),
+         decade = case_when(
+           end_year %in% c(1980:1989) ~ "1980's",
+           end_year %in% c(1990:1999) ~ "1990's",
+           end_year %in% c(2000:2009) ~ "2000's",
+           end_year %in% c(2010:2019) ~ "2010's"),
+         rating = str_replace(rating, " -.*", ""),
+         link = map(animeID, ~paste0("https://myanimelist.net/anime/", .x)) %>% unlist,
+         link = glue("[MAL Link]({link})"),
+         link = md(link)) %>% 
+  arrange(desc(score)) %>% 
+  mutate(score_rank = row_number()) %>% 
+  arrange(start_date)
+```
+
+
+## MAL pic
+
+```{r}
+# https://myanimelist.net/anime/2581
+
+mal_
+
+
+gundam_df %>% 
+  mutate(link = map(animeID, ~paste0("https://myanimelist.net/anime/", .x)) %>% unlist,
+         link = glue("[MAL Link]({link})"))
+```
+
+
+
+
+```{r}
+gundam_gt <- gundam_df %>% 
+  group_by(decade) %>% 
+  gt() %>% 
+  tab_header(title = "Mobile Suit Gundam", 
+             subtitle = md("All major stories in Universal Century and alternate universes")) %>% 
+  cols_label(
+    "title_english" = "Title",
+    "episodes" = "# of Episodes",
+    "studio" = "Studio",
+    "start_date" = "From",
+    "end_date" = "To",
+    "rating" = "Rating",
+    "score" = "Score",
+    "type" = "Type",
+    "score_rank" = "Rank",
+    "link" = "Link") %>% 
+  cols_align(align = "center") %>% 
+  tab_spanner(
+    label = "Airing Dates",
+    columns = vars("start_date", "end_date")
+  ) %>% 
+  tab_style(
+      style = cells_styles(
+        text_color = "green",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore >= 0.5 & newscore < 1
+      ))
+    ) %>% 
+  tab_style(
+      style = cells_styles(
+        text_color = "#49f149",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore >= 0 & newscore < 0.5
+      ))
+    ) %>% 
+  tab_style(
+      style = cells_styles(
+        text_color = "orange",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore >= -0.5 & newscore < 0
+      ))
+    ) %>% 
+  tab_style(
+      style = cells_styles(
+        text_color = "red",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore >= -1 & newscore < -0.5
+      ))
+    ) %>% 
+  tab_style(
+      style = cells_styles(
+        text_color = "purple",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore < -1
+      ))
+    ) %>% 
+  fmt_date(columns = vars(start_date, end_date),
+           date_style = 5) %>% 
+  cols_hide(columns = vars(newscore, avg_score, end_year, studio, animeID)) %>% 
+  tab_style(style = cells_styles(
+    text_size = 20,
+    text_font = "Roboto Condensed",
+    text_color = "white",
+    text_decorate = "underline",
+    bkgd_color = "blue"),
+    locations = list(cells_group("1980's"),
+                     cells_group("1990's"),
+                     cells_group("2000's"),
+                     cells_group("2010's"))) %>% 
+  tab_options(heading.background.color = "red",
+              heading.title.font.size = 26,
+              heading.subtitle.font.size = 22) %>% 
+  tab_style(
+    style = cells_styles(text_font = "Roboto Condensed"),
+    locations = list(cells_title(groups = "title"))
+  ) %>% 
+  tab_style(
+    style = cells_styles(text_weight = "bolder"),
+    locations = cells_data(columns = "title_english")
+  ) %>% 
+  tab_footnote(
+    footnote = "Ranked by Score",
+    locations = cells_column_labels(columns = "score_rank")
+  ) %>% 
+  tab_footnote(
+    footnote = "Color-coded based on average rating: 7.61",
+    locations = cells_column_labels(columns = "score")
+  ) %>% 
+  fmt_markdown(columns = vars("link")) %>% 
+  cols_move_to_end(columns = vars("link")) %>% 
+  tab_source_note(source_note = "Source: MyAnimeList, #TidyTuesday by @R_by_Ryo") 
+```
+
+
+
+
+```{r, fig.width=10}
+gundam_df %>% 
+  group_by(decade) %>% 
+  gt() %>% 
+  ## title style
+  tab_header(title = "Mobile Suit Gundam", 
+             subtitle = md("All major stories in Universal Century and alternate universes")) %>% 
+  tab_options(heading.background.color = "red",
+              heading.title.font.size = 26,
+              heading.subtitle.font.size = 22) %>% 
+  tab_style(
+    style = cells_styles(text_font = "Roboto Condensed"),
+    locations = list(cells_title(groups = "title"))
+  ) %>% 
+  ## change label names
+  cols_label(
+    "title_english" = "Title",
+    "episodes" = "# of Episodes",
+    "studio" = "Studio",
+    "start_date" = "From",
+    "end_date" = "To",
+    "rating" = "Rating",
+    "score" = "Score",
+    "type" = "Type",
+    "score_rank" = "Rank",
+    "link" = "Link") %>% 
+  ## spanner title
+  tab_spanner(
+    label = "Airing Dates",
+    columns = vars("start_date", "end_date")
+  ) %>% 
+  ## Color-fill scores
+  tab_style(
+      style = cells_styles(
+        text_color = "green",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore >= 0.5 & newscore < 1
+      ))
+    ) %>% 
+  tab_style(
+      style = cells_styles(
+        text_color = "#49f149",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore >= 0 & newscore < 0.5
+      ))
+    ) %>% 
+  tab_style(
+      style = cells_styles(
+        text_color = "orange",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore >= -0.5 & newscore < 0
+      ))
+    ) %>% 
+  tab_style(
+      style = cells_styles(
+        text_color = "red",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore >= -1 & newscore < -0.5
+      ))
+    ) %>% 
+  tab_style(
+      style = cells_styles(
+        text_color = "purple",
+        text_weight = "bold"
+      ),
+      locations = list(cells_data(
+        columns = vars(score),
+        rows = newscore < -1
+      ))
+    ) %>% 
+  ## Group title style
+  tab_style(style = cells_styles(
+    text_size = 20,
+    text_font = "Roboto Condensed",
+    text_color = "white",
+    text_decorate = "underline",
+    bkgd_color = "blue"),
+    locations = list(cells_group("1980's"),
+                     cells_group("1990's"),
+                     cells_group("2000's"),
+                     cells_group("2010's"))) %>% 
+  ## Show title
+  tab_style(
+    style = cells_styles(text_weight = "bolder"),
+    locations = cells_data(columns = "title_english")
+  ) %>% 
+  ## Footnotes
+  tab_footnote(
+    footnote = "Ranked by Score",
+    locations = cells_column_labels(columns = "score_rank")
+  ) %>% 
+  tab_footnote(
+    footnote = "Color-coded based on average rating: 7.61",
+    locations = cells_column_labels(columns = "score")
+  ) %>% 
+  ## Misc.
+  cols_align(align = "center") %>% 
+  fmt_date(columns = vars(start_date, end_date),
+           date_style = 5) %>% 
+  cols_hide(columns = vars(newscore, avg_score, end_year, studio, animeID)) %>% 
+  fmt_markdown(columns = vars("link")) %>% 
+  cols_move_to_end(columns = vars("link")) %>% 
+  tab_source_note(source_note = "Source: MyAnimeList, #TidyTuesday by @R_by_Ryo")
+```
+
+
+```{r}
+gtsave <- function(data,
+                   filename,
+                   ...) {
+
+  # Input object validation
+  #stop_if_not_gt(data)
+
+  # Get the lowercased file extension
+  file_ext <- gtsave_file_ext(filename)
+
+  # Stop function if a file extension is not provided
+  if (file_ext == "") {
+
+    stop("A file extension is required in the provided filename. We can use:\n",
+         " * `.html`/`.htm` (HTML file)\n",
+         " * `.tex`/`.ltx`/`.rnw` (LaTeX file)\n",
+         " * `.rtf` (RTF file)\n",
+         " * `.png` (PNG file)\n",
+         " * `.jpg/.jpeg` (JPEG file)\n",
+         " * `.pdf` (PDF file)",
+         call. = FALSE)
+  }
+
+  # Use the appropriate save function based
+  # on the filename extension
+  switch(file_ext,
+          htm = gt_save_html(data, filename, ...),
+         html = gt_save_html(data, filename, ...),
+          ltx = gt_save_latex(data, filename, ...),
+          rnw = gt_save_latex(data, filename, ...),
+          tex = gt_save_latex(data, filename, ...),
+          rtf = gt_save_rtf(data, filename, ...),
+          png = gt_save_webshot(data, filename, ...),
+          pdf = gt_save_webshot(data, filename, ...),
+         {
+           stop("The file extension used (`.", file_ext, "`) doesn't have an ",
+                "associated saving function.\n",
+                " * We can use either of `.html`/`.htm`, `.tex`/`.ltx`/`.rnw`, or `.rtf`",
+                call. = FALSE)
+         }
+  )
+}
+
+#' Saving function for an HTML file
+#'
+#' @importFrom htmltools as.tags save_html HTML
+#' @noRd
+gt_save_html <- function(data,
+                         filename,
+                         ...,
+                         inline_css = FALSE) {
+
+  if (inline_css) {
+
+    data %>%
+      as_raw_html(inline_css = inline_css) %>%
+      htmltools::HTML() %>%
+      htmltools::save_html(filename)
+
+  } else {
+
+    data %>%
+      htmltools::as.tags() %>%
+      htmltools::save_html(filename)
+  }
+}
+
+#' Saving function for an image file via the webshot package
+#'
+#' @noRd
+gt_save_webshot <- function(data,
+                            filename,
+                            ...,
+                            zoom = 2,
+                            expand = 5) {
+
+  # Create a temporary file with the `html` extension
+  tempfile_ <- tempfile(fileext = ".html")
+
+  # Reverse slashes on Windows filesystems
+  tempfile_ <-
+    tempfile_ %>%
+    tidy_gsub("\\\\", "/")
+
+  # Save gt table as HTML using the `gt_save_html()` function
+  gundam_gt %>% gt_save_html(filename = tempfile_)
+
+  # Saving an image requires the webshot package; if it's
+  # not present, stop with a message
+  if (requireNamespace("webshot", quietly = TRUE)) {
+
+    # Save the image in the working directory
+    webshot::webshot(
+      url = "gundam_gt.html",
+      file = "gundam_gt.png",
+      selector = "table",
+      zoom = 2,
+      expand = 5
+    )
+
+  } else {
+    stop("The `webshot` package is required for saving images of gt tables.",
+         call. = FALSE)
+  }
+}
+
+
+gtsave_file_ext <- function(filename) {
+
+  tools::file_ext(filename) %>% tolower()
+}
+
+tidy_gsub <- function(x, pattern, replacement, fixed = FALSE) {
+
+  gsub(pattern, replacement, x, fixed = fixed)
+}
+```
+
+
+
+
+```{r}
+gt_save_html <- function(data,
+                         filename,
+                         ...,
+                         inline_css = FALSE) {
+  
+  if (inline_css) {
+  }}
+
+
+
+gt_save_webshot <- function(data,
+                            filename,
+                            ...,
+                            zoom = 2,
+                            expand = 5) {
+  
+  # Create a temporary file with the `html` extension
+  tempfile_ <- tempfile(fileext = ".html")
+  
+  # Reverse slashes on Windows filesystems
+  tempfile_ <-
+    tempfile_ %>%
+    tidy_gsub("\\\\", "/")
+  
+  # Save gt table as HTML using the `gt_save_html()` function
+  data %>% gt_save_html(filename = tempfile_)
+  
+  # Saving an image requires the webshot package; if it's
+  # not present, stop with a message
+  if (requireNamespace("webshot", quietly = TRUE)) {
+    
+    # Save the image in the working directory
+    webshot::webshot(
+      url = paste0("file:///", tempfile_),
+      file = filename,
+      selector = "table",
+      zoom = zoom,
+      expand = expand
+    )
+    
+  } else {
+    stop("The `webshot` package is required for saving images of gt tables.",
+         call. = FALSE)
+  }
+}
+
+## gtsave PNG
+gtsave_png <- function(data,
+                       filename,
+                       ...) {
+  
+  
+  if (file_ext == "") {
+    stop("A file extension is required in the provided filename. We can use:\n",
+         " * `.html`/`.htm` (HTML file)\n",
+         " * `.tex`/`.ltx`/`.rnw` (LaTeX file)\n",
+         " * `.rtf` (RTF file)\n",
+         " * `.png` (PNG file)\n",
+         " * `.jpg/.jpeg` (JPEG file)\n",
+         " * `.pdf` (PDF file)",
+         call. = FALSE)
+  }
+  
+  switch(file_ext,
+         png = gt_save_webshot(data, filename, ...),
+         {
+           stop("The file extension used (`.", file_ext, "`) doesn't have an ",
+                "associated saving function.\n",
+           )
+         })
+}
+
+gtsave_png(filename = "gundam_gt.png")
+         
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- footnotes: score >>> fill scale dependent on + / - avg score
+-- -2 -1 /  -1 -0.5 / -0.5 0 +0.5 / +0.5 +1 / +1 +2
+- studio as a sub-header separate
+- color fill on rating
+- airing and from-to subheader
+
+```{r}
+gundam_df %>% 
+  #group_by(decade) %>% 
+  gt(groupname_col = "decade",
+     rownames_to_stub = TRUE,
+     rowname_col = "title_english") %>% 
+  #tab_header(title = "Mobile Suit Gundam") %>% 
+  summary_rows(
+    groups = FALSE,
+    columns = vars(score, favorites),
+    fns = list(thingymacdoodle = ~sum(.)))
+```
+
+
+
+
+```{r}
+gundam_synopsis <- tidy_anime %>% 
+  select(-related, -animeID, -name, -background, -premiered, -related, -members, -episodes, -airing, 
+         -title_synonyms, -title_japanese, -producers, -status, -broadcast, -genre, -source, -rank, -popularity) %>% 
+  group_by(title_english) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  filter(str_detect(title_english, "Gundam"), type == "TV") %>% 
+  select(title_english, synopsis) 
+```
+
+
+
+
+```{r}
+tidy_anime %>% 
+  summarize(avg_num_scorers = mean(scored_by))
+
+tidy_anime %>% 
+  select(genre) %>% 
+  unique()
+```
+
+
+
+
+```{r}
+tidy_anime %>% 
+  select(-genre) %>% 
+  filter(type == "TV", scored_by > 50000) %>% 
+  mutate(premiered = as_factor(premiered),
+         rating = as_factor(rating)) %>% 
+  group_by(title_english) %>% 
+  summarize(score = mean(score)) %>% 
+  arrange(desc(score)) %>% 
+  head(10)
+```
+

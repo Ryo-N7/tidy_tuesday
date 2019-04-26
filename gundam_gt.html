@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+
+
+</head>
+<body style="background-color:white;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#seqkrvmdfe .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #000000;
+  font-size: 16px;
+  background-color: #FFFFFF;
+  /* table.background.color */
+  width: auto;
+  /* table.width */
+  border-top-style: solid;
+  /* table.border.top.style */
+  border-top-width: 2px;
+  /* table.border.top.width */
+  border-top-color: #A8A8A8;
+  /* table.border.top.color */
+}
+
+#seqkrvmdfe .gt_heading {
+  background-color: red;
+  /* heading.background.color */
+  border-bottom-color: #FFFFFF;
+}
+
+#seqkrvmdfe .gt_title {
+  color: #ffffff;
+  font-size: 26px;
+  /* heading.title.font.size */
+  padding-top: 4px;
+  /* heading.top.padding */
+  padding-bottom: 1px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#seqkrvmdfe .gt_subtitle {
+  color: #ffffff;
+  font-size: 22px;
+  /* heading.subtitle.font.size */
+  padding-top: 1px;
+  padding-bottom: 4px;
+  /* heading.bottom.padding */
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#seqkrvmdfe .gt_bottom_border {
+  border-bottom-style: solid;
+  /* heading.border.bottom.style */
+  border-bottom-width: 2px;
+  /* heading.border.bottom.width */
+  border-bottom-color: #A8A8A8;
+  /* heading.border.bottom.color */
+}
+
+#seqkrvmdfe .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#seqkrvmdfe .gt_col_heading {
+  color: #000000;
+  background-color: #FFFFFF;
+  /* column_labels.background.color */
+  font-size: 16px;
+  /* column_labels.font.size */
+  font-weight: initial;
+  /* column_labels.font.weight */
+  vertical-align: middle;
+  padding: 10px;
+  margin: 10px;
+}
+
+#seqkrvmdfe .gt_sep_right {
+  border-right: 5px solid #FFFFFF;
+}
+
+#seqkrvmdfe .gt_group_heading {
+  padding: 8px;
+  color: #000000;
+  background-color: #FFFFFF;
+  /* row_group.background.color */
+  font-size: 16px;
+  /* row_group.font.size */
+  font-weight: initial;
+  /* row_group.font.weight */
+  border-top-style: solid;
+  /* row_group.border.top.style */
+  border-top-width: 2px;
+  /* row_group.border.top.width */
+  border-top-color: #A8A8A8;
+  /* row_group.border.top.color */
+  border-bottom-style: solid;
+  /* row_group.border.bottom.style */
+  border-bottom-width: 2px;
+  /* row_group.border.bottom.width */
+  border-bottom-color: #A8A8A8;
+  /* row_group.border.bottom.color */
+  vertical-align: middle;
+}
+
+#seqkrvmdfe .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #000000;
+  background-color: #FFFFFF;
+  /* row_group.background.color */
+  font-size: 16px;
+  /* row_group.font.size */
+  font-weight: initial;
+  /* row_group.font.weight */
+  border-top-style: solid;
+  /* row_group.border.top.style */
+  border-top-width: 2px;
+  /* row_group.border.top.width */
+  border-top-color: #A8A8A8;
+  /* row_group.border.top.color */
+  border-bottom-style: solid;
+  /* row_group.border.bottom.style */
+  border-bottom-width: 2px;
+  /* row_group.border.bottom.width */
+  border-bottom-color: #A8A8A8;
+  /* row_group.border.bottom.color */
+  vertical-align: middle;
+}
+
+#seqkrvmdfe .gt_striped {
+  background-color: #f2f2f2;
+}
+
+#seqkrvmdfe .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#seqkrvmdfe .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#seqkrvmdfe .gt_row {
+  padding: 8px;
+  /* row.padding */
+  margin: 10px;
+  vertical-align: middle;
+}
+
+#seqkrvmdfe .gt_stub {
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #A8A8A8;
+  padding-left: 12px;
+}
+
+#seqkrvmdfe .gt_summary_row {
+  color: #000000;
+  background-color: #FFFFFF;
+  /* summary_row.background.color */
+  padding: 8px;
+  /* summary_row.padding */
+  text-transform: inherit;
+  /* summary_row.text_transform */
+}
+
+#seqkrvmdfe .gt_grand_summary_row {
+  color: #000000;
+  background-color: #FFFFFF;
+  /* grand_summary_row.background.color */
+  padding: 8px;
+  /* grand_summary_row.padding */
+  text-transform: inherit;
+  /* grand_summary_row.text_transform */
+}
+
+#seqkrvmdfe .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+}
+
+#seqkrvmdfe .gt_first_grand_summary_row {
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #A8A8A8;
+}
+
+#seqkrvmdfe .gt_table_body {
+  border-top-style: solid;
+  /* table_body.border.top.style */
+  border-top-width: 2px;
+  /* table_body.border.top.width */
+  border-top-color: #A8A8A8;
+  /* table_body.border.top.color */
+  border-bottom-style: solid;
+  /* table_body.border.bottom.style */
+  border-bottom-width: 2px;
+  /* table_body.border.bottom.width */
+  border-bottom-color: #A8A8A8;
+  /* table_body.border.bottom.color */
+}
+
+#seqkrvmdfe .gt_footnote {
+  font-size: 90%;
+  /* footnote.font.size */
+  padding: 4px;
+  /* footnote.padding */
+}
+
+#seqkrvmdfe .gt_sourcenote {
+  font-size: 90%;
+  /* sourcenote.font.size */
+  padding: 4px;
+  /* sourcenote.padding */
+}
+
+#seqkrvmdfe .gt_center {
+  text-align: center;
+}
+
+#seqkrvmdfe .gt_left {
+  text-align: left;
+}
+
+#seqkrvmdfe .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#seqkrvmdfe .gt_font_normal {
+  font-weight: normal;
+}
+
+#seqkrvmdfe .gt_font_bold {
+  font-weight: bold;
+}
+
+#seqkrvmdfe .gt_font_italic {
+  font-style: italic;
+}
+
+#seqkrvmdfe .gt_super {
+  font-size: 65%;
+}
+
+#seqkrvmdfe .gt_footnote_glyph {
+  font-style: italic;
+  font-size: 65%;
+}
+</style>
+<div id="seqkrvmdfe" style="overflow-x:auto;"><!--gt table start-->
+<table class='gt_table'>
+<thead>
+<tr>
+<th colspan='9' class='gt_heading gt_title gt_font_normal gt_center'  style="font-family:Roboto Condensed;">Mobile Suit Gundam</th>
+</tr>
+<tr>
+<th colspan='9' class='gt_heading gt_subtitle gt_font_normal gt_center gt_bottom_border' >All major stories in Universal Century and alternate universes</th>
+</tr>
+</thead>
+<tr>
+<th class='gt_col_heading gt_center' rowspan='2' colspan='1'>Title</th>
+<th class='gt_col_heading gt_center' rowspan='2' colspan='1'>Type</th>
+<th class='gt_col_heading gt_center' rowspan='2' colspan='1'># of Episodes</th>
+<th class='gt_col_heading gt_column_spanner gt_center' rowspan='1' colspan='2'>Airing Dates</th>
+<th class='gt_col_heading gt_center' rowspan='2' colspan='1'>Rating</th>
+<th class='gt_col_heading gt_center' rowspan='2' colspan='1'>Score<sup class='gt_footnote_glyph'>1</sup></th>
+<th class='gt_col_heading gt_center' rowspan='2' colspan='1'>Rank<sup class='gt_footnote_glyph'>2</sup></th>
+<th class='gt_col_heading gt_center' rowspan='2' colspan='1'>Link</th>
+</tr>
+<tr>
+<th class='gt_col_heading gt_center' rowspan='1' colspan='1'>From</th>
+<th class='gt_col_heading gt_center' rowspan='1' colspan='1'>To</th>
+</tr>
+<tbody class='gt_table_body'>
+<tr class='gt_group_heading_row'>
+<td colspan='9' class='gt_group_heading' style='background-color:blue;color:white;font-family:Roboto Condensed;font-size:20;text-decoration:underline;'>1980's</td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Suit Gundam</td>
+<td class='gt_row gt_center'>TV</td>
+<td class='gt_row gt_center'>43</td>
+<td class='gt_row gt_center'>April 7, 1979</td>
+<td class='gt_row gt_center'>January 2, 1980</td>
+<td class='gt_row gt_center'>PG-13</td>
+<td class='gt_row gt_center' style="color:#49f149;font-weight:bold;">7.85</td>
+<td class='gt_row gt_center'>11</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/80">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Mobile Suit Zeta Gundam</td>
+<td class='gt_row gt_center gt_striped'>TV</td>
+<td class='gt_row gt_center gt_striped'>50</td>
+<td class='gt_row gt_center gt_striped'>March 2, 1985</td>
+<td class='gt_row gt_center gt_striped'>February 2, 1986</td>
+<td class='gt_row gt_center gt_striped'>PG-13</td>
+<td class='gt_row gt_center gt_striped' style="color:#49f149;font-weight:bold;">7.99</td>
+<td class='gt_row gt_center gt_striped'>8</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/85">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Suit Gundam ZZ</td>
+<td class='gt_row gt_center'>TV</td>
+<td class='gt_row gt_center'>47</td>
+<td class='gt_row gt_center'>March 1, 1986</td>
+<td class='gt_row gt_center'>January 3, 1987</td>
+<td class='gt_row gt_center'>PG-13</td>
+<td class='gt_row gt_center' style="color:red;font-weight:bold;">6.73</td>
+<td class='gt_row gt_center'>24</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/86">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Mobile Suit Gundam: Char's Counterattack</td>
+<td class='gt_row gt_center gt_striped'>Movie</td>
+<td class='gt_row gt_center gt_striped'>1</td>
+<td class='gt_row gt_center gt_striped'>March 12, 1988</td>
+<td class='gt_row gt_center gt_striped'>March 12, 1988</td>
+<td class='gt_row gt_center gt_striped'>PG-13</td>
+<td class='gt_row gt_center gt_striped' style="color:#49f149;font-weight:bold;">7.74</td>
+<td class='gt_row gt_center gt_striped'>14</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/87">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Suit Gundam 0080: War in the Pocket</td>
+<td class='gt_row gt_center'>OVA</td>
+<td class='gt_row gt_center'>6</td>
+<td class='gt_row gt_center'>March 25, 1989</td>
+<td class='gt_row gt_center'>August 2, 1989</td>
+<td class='gt_row gt_center'>PG-13</td>
+<td class='gt_row gt_center' style="color:#49f149;font-weight:bold;">7.88</td>
+<td class='gt_row gt_center'>10</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/82">MAL Link</a></p>
+</div></td>
+</tr>
+<tr class='gt_group_heading_row'>
+<td colspan='9' class='gt_group_heading' style='background-color:blue;color:white;font-family:Roboto Condensed;font-size:20;text-decoration:underline;'>1990's</td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Mobile Suit Gundam F91</td>
+<td class='gt_row gt_center gt_striped'>Movie</td>
+<td class='gt_row gt_center gt_striped'>1</td>
+<td class='gt_row gt_center gt_striped'>March 16, 1991</td>
+<td class='gt_row gt_center gt_striped'>March 16, 1991</td>
+<td class='gt_row gt_center gt_striped'>PG-13</td>
+<td class='gt_row gt_center gt_striped' style="color:red;font-weight:bold;">6.78</td>
+<td class='gt_row gt_center gt_striped'>22</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/88">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Suit Gundam 0083: Stardust Memory</td>
+<td class='gt_row gt_center'>OVA</td>
+<td class='gt_row gt_center'>13</td>
+<td class='gt_row gt_center'>May 23, 1991</td>
+<td class='gt_row gt_center'>September 2, 1992</td>
+<td class='gt_row gt_center'>PG-13</td>
+<td class='gt_row gt_center' style="color:orange;font-weight:bold;">7.40</td>
+<td class='gt_row gt_center'>19</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/84">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Mobile Suit V Gundam</td>
+<td class='gt_row gt_center gt_striped'>TV</td>
+<td class='gt_row gt_center gt_striped'>51</td>
+<td class='gt_row gt_center gt_striped'>April 2, 1993</td>
+<td class='gt_row gt_center gt_striped'>March 2, 1994</td>
+<td class='gt_row gt_center gt_striped'>PG-13</td>
+<td class='gt_row gt_center gt_striped' style="color:red;font-weight:bold;">6.85</td>
+<td class='gt_row gt_center gt_striped'>21</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/89">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Fighter G Gundam</td>
+<td class='gt_row gt_center'>TV</td>
+<td class='gt_row gt_center'>49</td>
+<td class='gt_row gt_center'>April 1, 1994</td>
+<td class='gt_row gt_center'>March 3, 1995</td>
+<td class='gt_row gt_center'>PG-13</td>
+<td class='gt_row gt_center' style="color:orange;font-weight:bold;">7.60</td>
+<td class='gt_row gt_center'>16</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/96">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Mobile Suit Gundam Wing</td>
+<td class='gt_row gt_center gt_striped'>TV</td>
+<td class='gt_row gt_center gt_striped'>49</td>
+<td class='gt_row gt_center gt_striped'>April 7, 1995</td>
+<td class='gt_row gt_center gt_striped'>March 2, 1996</td>
+<td class='gt_row gt_center gt_striped'>PG-13</td>
+<td class='gt_row gt_center gt_striped' style="color:#49f149;font-weight:bold;">7.82</td>
+<td class='gt_row gt_center gt_striped'>13</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/90">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Suit Gundam: The 08th MS Team</td>
+<td class='gt_row gt_center'>OVA</td>
+<td class='gt_row gt_center'>12</td>
+<td class='gt_row gt_center'>January 25, 1996</td>
+<td class='gt_row gt_center'>July 2, 1999</td>
+<td class='gt_row gt_center'>PG-13</td>
+<td class='gt_row gt_center' style="color:#49f149;font-weight:bold;">8.09</td>
+<td class='gt_row gt_center'>6</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/81">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">After War Gundam X</td>
+<td class='gt_row gt_center gt_striped'>TV</td>
+<td class='gt_row gt_center gt_striped'>39</td>
+<td class='gt_row gt_center gt_striped'>April 5, 1996</td>
+<td class='gt_row gt_center gt_striped'>December 2, 1996</td>
+<td class='gt_row gt_center gt_striped'>PG-13</td>
+<td class='gt_row gt_center gt_striped' style="color:orange;font-weight:bold;">7.36</td>
+<td class='gt_row gt_center gt_striped'>20</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/92">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Suit Gundam Wing: Endless Waltz</td>
+<td class='gt_row gt_center'>OVA</td>
+<td class='gt_row gt_center'>3</td>
+<td class='gt_row gt_center'>January 25, 1997</td>
+<td class='gt_row gt_center'>July 2, 1997</td>
+<td class='gt_row gt_center'>PG-13</td>
+<td class='gt_row gt_center' style="color:#49f149;font-weight:bold;">7.85</td>
+<td class='gt_row gt_center'>12</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/91">MAL Link</a></p>
+</div></td>
+</tr>
+<tr class='gt_group_heading_row'>
+<td colspan='9' class='gt_group_heading' style='background-color:blue;color:white;font-family:Roboto Condensed;font-size:20;text-decoration:underline;'>2000's</td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Turn A Gundam</td>
+<td class='gt_row gt_center gt_striped'>TV</td>
+<td class='gt_row gt_center gt_striped'>50</td>
+<td class='gt_row gt_center gt_striped'>April 9, 1999</td>
+<td class='gt_row gt_center gt_striped'>April 1, 2000</td>
+<td class='gt_row gt_center gt_striped'>PG-13</td>
+<td class='gt_row gt_center gt_striped' style="color:#49f149;font-weight:bold;">7.73</td>
+<td class='gt_row gt_center gt_striped'>15</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/95">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Gundam Evolve</td>
+<td class='gt_row gt_center'>OVA</td>
+<td class='gt_row gt_center'>15</td>
+<td class='gt_row gt_center'>January 1, 2001</td>
+<td class='gt_row gt_center'>January 2, 2007</td>
+<td class='gt_row gt_center'>PG-13</td>
+<td class='gt_row gt_center' style="color:red;font-weight:bold;">6.78</td>
+<td class='gt_row gt_center'>23</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/3288">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Mobile Suit Gundam 00</td>
+<td class='gt_row gt_center gt_striped'>TV</td>
+<td class='gt_row gt_center gt_striped'>25</td>
+<td class='gt_row gt_center gt_striped'>October 6, 2007</td>
+<td class='gt_row gt_center gt_striped'>March 2, 2008</td>
+<td class='gt_row gt_center gt_striped'>R</td>
+<td class='gt_row gt_center gt_striped' style="color:green;font-weight:bold;">8.20</td>
+<td class='gt_row gt_center gt_striped'>4</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/2581">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Suit Gundam 00: Second Season</td>
+<td class='gt_row gt_center'>TV</td>
+<td class='gt_row gt_center'>25</td>
+<td class='gt_row gt_center'>October 5, 2008</td>
+<td class='gt_row gt_center'>March 2, 2009</td>
+<td class='gt_row gt_center'>R</td>
+<td class='gt_row gt_center' style="color:green;font-weight:bold;">8.17</td>
+<td class='gt_row gt_center'>5</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/3927">MAL Link</a></p>
+</div></td>
+</tr>
+<tr class='gt_group_heading_row'>
+<td colspan='9' class='gt_group_heading' style='background-color:blue;color:white;font-family:Roboto Condensed;font-size:20;text-decoration:underline;'>2010's</td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Mobile Suit Gundam Unicorn</td>
+<td class='gt_row gt_center gt_striped'>OVA</td>
+<td class='gt_row gt_center gt_striped'>7</td>
+<td class='gt_row gt_center gt_striped'>March 12, 2010</td>
+<td class='gt_row gt_center gt_striped'>June 6, 2014</td>
+<td class='gt_row gt_center gt_striped'>PG-13</td>
+<td class='gt_row gt_center gt_striped' style="color:green;font-weight:bold;">8.28</td>
+<td class='gt_row gt_center gt_striped'>2</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/6336">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Gundam Build Fighters</td>
+<td class='gt_row gt_center'>TV</td>
+<td class='gt_row gt_center'>25</td>
+<td class='gt_row gt_center'>October 7, 2013</td>
+<td class='gt_row gt_center'>March 3, 2014</td>
+<td class='gt_row gt_center'>G</td>
+<td class='gt_row gt_center' style="color:#49f149;font-weight:bold;">7.90</td>
+<td class='gt_row gt_center'>9</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/19319">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Gundam Reconguista in G</td>
+<td class='gt_row gt_center gt_striped'>TV</td>
+<td class='gt_row gt_center gt_striped'>26</td>
+<td class='gt_row gt_center gt_striped'>October 3, 2014</td>
+<td class='gt_row gt_center gt_striped'>March 2, 2015</td>
+<td class='gt_row gt_center gt_striped'>PG-13</td>
+<td class='gt_row gt_center gt_striped' style="color:purple;font-weight:bold;">5.78</td>
+<td class='gt_row gt_center gt_striped'>25</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/23259">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Gundam Build Fighters Try</td>
+<td class='gt_row gt_center'>TV</td>
+<td class='gt_row gt_center'>25</td>
+<td class='gt_row gt_center'>October 8, 2014</td>
+<td class='gt_row gt_center'>April 1, 2015</td>
+<td class='gt_row gt_center'>G</td>
+<td class='gt_row gt_center' style="color:orange;font-weight:bold;">7.41</td>
+<td class='gt_row gt_center'>18</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/24625">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Mobile Suit Gundam: The Origin</td>
+<td class='gt_row gt_center gt_striped'>OVA</td>
+<td class='gt_row gt_center gt_striped'>6</td>
+<td class='gt_row gt_center gt_striped'>April 24, 2015</td>
+<td class='gt_row gt_center gt_striped'>May 5, 2018</td>
+<td class='gt_row gt_center gt_striped'>R+</td>
+<td class='gt_row gt_center gt_striped' style="color:green;font-weight:bold;">8.43</td>
+<td class='gt_row gt_center gt_striped'>1</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/10937">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Suit Gundam: Iron-Blooded Orphans</td>
+<td class='gt_row gt_center'>TV</td>
+<td class='gt_row gt_center'>25</td>
+<td class='gt_row gt_center'>October 4, 2015</td>
+<td class='gt_row gt_center'>March 2, 2016</td>
+<td class='gt_row gt_center'>R</td>
+<td class='gt_row gt_center' style="color:#49f149;font-weight:bold;">8.02</td>
+<td class='gt_row gt_center'>7</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/31251">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center gt_striped' style="font-weight:bolder;">Mobile Suit Gundam: Iron-Blooded Orphans 2nd Season</td>
+<td class='gt_row gt_center gt_striped'>TV</td>
+<td class='gt_row gt_center gt_striped'>25</td>
+<td class='gt_row gt_center gt_striped'>October 2, 2016</td>
+<td class='gt_row gt_center gt_striped'>April 2, 2017</td>
+<td class='gt_row gt_center gt_striped'>R</td>
+<td class='gt_row gt_center gt_striped' style="color:green;font-weight:bold;">8.27</td>
+<td class='gt_row gt_center gt_striped'>3</td>
+<td class='gt_row gt_center gt_striped'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/33051">MAL Link</a></p>
+</div></td>
+</tr>
+<tr>
+<td class='gt_row gt_center' style="font-weight:bolder;">Mobile Suit Gundam Narrative</td>
+<td class='gt_row gt_center'>Movie</td>
+<td class='gt_row gt_center'>1</td>
+<td class='gt_row gt_center'>November 30, 2018</td>
+<td class='gt_row gt_center'>November 30, 2018</td>
+<td class='gt_row gt_center'>PG-13</td>
+<td class='gt_row gt_center' style="color:orange;font-weight:bold;">7.42</td>
+<td class='gt_row gt_center'>17</td>
+<td class='gt_row gt_center'><div class='gt_from_md'><p><a href="https://myanimelist.net/anime/37764">MAL Link</a></p>
+</div></td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td colspan='10' class='gt_sourcenote'>Source: MyAnimeList, #TidyTuesday by @R_by_Ryo</td>
+</tr>
+</tfoot>
+<tfoot>
+<tr>
+<td colspan='9' class='gt_footnote'><sup class='gt_footnote_glyph'><em>1</em></sup> Color-coded based on average rating: 7.61<br /><sup class='gt_footnote_glyph'><em>2</em></sup> Ranked by Score</td>
+</tr>
+</tfoot></table>
+<!--gt table end-->
+</div>
+</body>
+</html>
