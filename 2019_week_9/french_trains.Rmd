@@ -1,0 +1,310 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "February 26, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages
+
+```{r}
+pacman::p_load(tidyverse, scales, lubridate, glue)
+```
+
+
+## Insert data
+
+```{r}
+frenchtrain_raw <- read_csv("full_trains.csv")
+```
+
+```{r}
+frenchtrain_raw %>% skimr::skim()
+```
+
+
+
+
+```{r}
+parisest <- frenchtrain_raw %>% 
+  filter(departure_station == "PARIS EST") %>% 
+  select(year, month, service, departure_station, arrival_station, 
+         avg_delay_late_at_departure,
+         avg_delay_all_departing) %>% 
+  mutate(avg_delay_all_departing = round(avg_delay_all_departing, digits = 0),
+         avg_delay_late_at_departure = round(avg_delay_late_at_departure, digits = 0))
+
+glimpse(parisest)
+```
+
+
+
+```{r}
+library(ggstraw)
+
+ggstraw::flights %>% glimpse()
+```
+
+
+```{r}
+parisest %>% 
+  group_by(year, month) %>% 
+  mutate(dep_time = ymd_hm("2019-02-28 00:00", tz = "Pacific/Auckland")) %>% 
+  # mutate(dep_2 = if_else(avg_delay_all_departing >= 1, 
+  #                        dep_time + avg_delay_all_departing,
+  #                        dep_time)) %>% 
+  mutate(dep_2 = dep_time + avg_delay_late_at_departure) %>% 
+  mutate(late = if_else(dep_time == dep_2, FALSE, TRUE)) %>% 
+  ggplot(aes(dep_time, service, xend = dep_2, color = late)) +
+  geom_straw() +
+  theme_minimal()
+```
+
+
+```{r}
+parisest %>% 
+  ggplot(aes(month, avg_delay_all_departing)) +
+  geom_point() +
+  geom_smooth()
+```
+
+
+```{r}
+frenchtrain_raw %>% 
+  arrange(departure_station, month) %>% 
+  fill(service, .direction = "down") %>% 
+  filter(service == "International") %>% 
+  mutate_if(is.character, str_to_title(.))
+```
+
+
+
+
+```{r}
+parisest2 <- frenchtrain_raw %>% 
+  filter(departure_station == "PARIS EST") %>% 
+  select(year, month, service, departure_station, arrival_station, 
+         contains("delay_cause"))
+
+glimpse(parisest2)
+```
+
+```{r}
+parisest2 %>% 
+  group_by(year, month, departure_station) %>% 
+  summarize_at(vars(contains("delay_cause")), mean, na.rm = TRUE) %>% 
+  gather("delay_cause", "value", -year, -month, -departure_station) %>% 
+  ggplot(aes(month, value, fill = delay_cause)) +
+  geom_area() +
+  facet_wrap(~year) +
+  theme_minimal()
+```
+
+
+
+
+
+```{r fig.height=4, fig.width=12}
+frenchtrain_raw %>% 
+  filter(service == "International",
+         #year == 2017,
+         str_detect(departure_station, "PARIS")) %>% 
+  select(-contains("delay")) %>% 
+  arrange(year, month) %>% 
+  mutate(prop_late = num_late_at_departure / total_num_trips,
+         year = as_factor(as.character(year)),
+         month = as_factor(as.character(month))) %>% 
+  mutate(dest_country = case_when(
+    arrival_station %in% c("FRANCFORT", "STUTTGART") ~ "Allemagne",
+    arrival_station %in% c("GENEVE", "LAUSANNE", "ZURICH") ~ "Suisse",
+    arrival_station %in% c("ITALIE") ~ "Italie"
+  )) %>% 
+  #filter(departure_station == "PARIS EST") %>% 
+  select(year, month, departure_station, arrival_station,
+         prop_late, dest_country) %>% 
+  ggplot(aes(month, prop_late, color = arrival_station, group = arrival_station)) + 
+  geom_line() + 
+  scale_y_continuous(labels = percent_format()) +
+  facet_grid(year ~ dest_country)
+
+
+frenchtrain_raw %>% 
+  filter(service == "International",
+         #year == 2017,
+         str_detect(departure_station, "PARIS")) %>% 
+  select(-contains("delay")) %>% 
+  arrange(year, month) %>% 
+  mutate(prop_late = num_late_at_departure / total_num_trips,
+         year = as_factor(as.character(year)),
+         month = as_factor(as.character(month))) %>% 
+  mutate(dest_country = case_when(
+    arrival_station %in% c("FRANCFORT", "STUTTGART") ~ "Allemagne",
+    arrival_station %in% c("GENEVE", "LAUSANNE", "ZURICH") ~ "Suisse",
+    arrival_station %in% c("ITALIE") ~ "Italie"
+  )) %>% 
+  #filter(departure_station == "PARIS EST") %>% 
+  select(year, month, departure_station, arrival_station,
+         prop_late, dest_country) %>% 
+  ggplot(aes(month, prop_late, color = arrival_station, group = arrival_station)) + 
+  geom_line() + 
+  scale_y_continuous(labels = percent_format()) +
+  facet_wrap(~ dest_country, strip.position = "bottom") +
+  theme_light() +
+  theme(strip.placement = "outside")
+```
+
+
+
+```{r fig.height=4, fig.width=9}
+inter_delays <- frenchtrain_raw %>% 
+  filter(service == "International",
+         #year == 2017,
+         str_detect(departure_station, "PARIS")) %>% 
+  select(-contains("delay")) %>% 
+  arrange(year, month) %>% 
+  select(year, month, departure_station, arrival_station,
+         num_late_at_departure, total_num_trips) %>% 
+  mutate_at(vars(contains("station")), str_to_title) %>% 
+  mutate(prop_late = num_late_at_departure / total_num_trips,
+         year = as_factor(as.character(year)),
+         month = as_factor(as.character(month)),
+         arrival_station = case_when(
+           arrival_station == "Francfort" ~ "Frankfurt",
+           arrival_station == "Geneve" ~ "Geneva",
+           arrival_station == "Italie" ~ "Italy",
+           TRUE ~ arrival_station),
+         dest_country = case_when(
+           arrival_station %in% c("Frankfurt", "Stuttgart") ~ "Germany",
+           arrival_station %in% c("Geneva", "Lausanne", "Zurich") ~ "Switzerland",
+           arrival_station == "Italy" ~ "Italy"
+         )) %>% 
+  #mutate(month = fct_reorder(month, month.abb))
+  arrange(departure_station, arrival_station) %>% 
+  group_by(year) %>% 
+  mutate(montho = str_replace(month, "[0-9]+", month.abb) %>% as_factor) %>% 
+  ungroup() %>% 
+  group_by(month, arrival_station) %>% 
+  mutate(avg_prop_late = mean(prop_late)) %>% 
+  ungroup()
+
+cols <- c("Geneva" = "#9AA199", "Lausanne" = "#BA514B", "Zurich" = "#6C9033",
+          "Frankfurt" = "yellow", "Stuttgart" = "black",
+          "Italy" = "purple")
+  
+inter_delays %>% 
+  filter(!dest_country == "Italy") %>% 
+  ggplot(aes(montho, avg_prop_late, color = arrival_station, group = arrival_station)) + 
+  geom_line(size = 1.25) + 
+  scale_y_continuous(labels = percent_format(), 
+                     limits = c(0, NA), 
+                     expand = c(0, 0)) +
+  scale_color_manual(values = cols) +
+  labs(title = str_wrap("Average delays (as % of all outbound trips) from Paris stations for international destinations", 70),
+       subtitle = glue("
+                       Timeframe: 2015-2018
+                       "),
+       caption = glue("
+                       Departure stations: Paris Est and Paris Lyon"),
+       x = "Month", 
+       y = "Average Delays") +
+  facet_wrap(~ dest_country, strip.position = "bottom") +
+  ggpomological::theme_pomological_fancy() +
+  theme(strip.placement = "outside",
+        strip.background = element_blank())
+  theme_minimal()
+```
+
+
+
+
+```{r}
+national_delays <- frenchtrain_raw %>% 
+  filter(service == "National",
+         str_detect(departure_station, "PARIS")
+         ) %>% 
+  select(-contains("delay")) %>% 
+  arrange(year, month) %>% 
+  select(year, month, departure_station, arrival_station,
+         num_late_at_departure, total_num_trips) %>% 
+  mutate_at(vars(contains("station")), str_to_title) %>% 
+  mutate(prop_late = num_late_at_departure / total_num_trips,
+         year = as_factor(as.character(year)),
+         month = as_factor(as.character(month))) %>% 
+  arrange(departure_station, arrival_station) %>% 
+  group_by(year) %>% 
+  mutate(montho = str_replace(month, "[0-9]+", month.abb) %>% as_factor) %>% 
+  ungroup() %>% 
+  group_by(month, arrival_station) %>% 
+  mutate(avg_prop_late = mean(prop_late)) %>% 
+  ungroup()
+
+
+national_delays <- frenchtrain_raw %>% 
+  filter(service == "National",
+         str_detect(departure_station, "PARIS")
+         ) %>% 
+  select(-contains("delay")) %>% 
+  arrange(year, month) %>% 
+  select(year, month, departure_station, arrival_station,
+         num_late_at_departure, total_num_trips) %>% 
+  mutate_at(vars(contains("station")), str_to_title) %>% 
+  mutate(prop_late = num_late_at_departure / total_num_trips,
+         year = as_factor(as.character(year)),
+         month1 = as_factor(as.character(month))) %>% 
+  arrange(departure_station, arrival_station) %>% 
+  group_by(year) %>% 
+  mutate(montho = str_replace(month1, "[0-9]+", month.abb) %>% as_factor) %>% 
+  ungroup() %>% 
+  group_by(month, arrival_station) %>% 
+  summarize(avg_prop_late = mean(prop_late)) %>% 
+  ungroup()
+
+
+national_delays %>% 
+  #filter(arrival_station %in% c("Strasbourg", "Quimper", "Rennes", "Laval", "Brest")) %>% 
+  ggplot(aes(month, avg_prop_late, color = arrival_station, group = arrival_station)) + 
+  geom_line() + 
+  gghighlight::gghighlight(max(avg_prop_late) > 0.15 | min(avg_prop_late) < 0.02) +
+  scale_y_continuous(labels = percent_format(), 
+                     limits = c(0, NA), 
+                     expand = c(0, 0)) +
+  #scale_color_manual(values = cols) +
+  labs(title = str_wrap("Average delays (as % of all outbound trips) from Paris stations for domestic destinations", 70),
+       subtitle = glue("
+                       Timeframe: 2015-2018
+                       "),
+       caption = glue("
+                       Departure stations: Paris Est and Paris Lyon"),
+       x = "Month", 
+       y = "Average Delays") +
+  ggpomological::theme_pomological_fancy()
+
+
+national_delays %>% 
+  #filter(arrival_station %in% c("Strasbourg", "Quimper", "Rennes", "Laval", "Brest")) %>% 
+  ggplot(aes(month, avg_prop_late, color = arrival_station, group = arrival_station)) + 
+  geom_line() + 
+  gghighlight::gghighlight(mean(avg_prop_late) > 0.07, max_highlight = 3) +
+  scale_y_continuous(labels = percent_format(), 
+                     limits = c(0, NA), 
+                     expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = seq(from = 1, to = 12, by = 1),
+                     labels = month.abb) +
+  geom_smooth(se = FALSE) +
+  #scale_color_manual(values = cols) +
+  labs(title = str_wrap("Average delays (as % of all outbound trips) from Paris stations for domestic destinations", 70),
+       subtitle = glue("
+                       Timeframe: 2015-2018
+                       "),
+       caption = glue("
+                       Departure stations: Paris Est and Paris Lyon"),
+       x = "Month", 
+       y = "Average Delays") +
+  ggpomological::theme_pomological_fancy()
+```
+

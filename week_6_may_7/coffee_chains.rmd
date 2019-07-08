@@ -15,6 +15,8 @@ library(dplyr)
 library(readxl)
 # library(ggplot2)
 library(sf)
+library(extrafont)
+loadfonts()
 
 ```
 
@@ -24,7 +26,7 @@ You can also embed plots, for example:
 
 ```{r }
 
-starbucks_raw <- read_excel("../may_7_week_6/week6_coffee_chains.xlsx", sheet = 1)
+starbucks_raw <- read_excel("../week_6_may_7/week6_coffee_chains.xlsx", sheet = 1)
 
 glimpse(starbucks_raw)
 
@@ -43,7 +45,7 @@ class(starbucks_usa)
 # us_states %>% glimpse()
 
 states_sf <- tigris::states(cb = TRUE) %>% 
-  st_as_sf() %>% glimpse()
+  st_as_sf() %>% 
   select(STUSPS, NAME, geometry) %>% 
   filter(!STUSPS %in% c("VI", "MP", "GU", "PR", "AS")) # filter out territories and Puerto Rico
 
@@ -72,6 +74,7 @@ starbucks_sf2 %>%
 
 ```
 
+# normalize by pop.
 
 ```{r}
 # normalize by population
@@ -92,6 +95,23 @@ starbucks_population <- states_sf %>%
   left_join(states_pop, by = "NAME") %>% 
   left_join(starbucks_usa, by = c("STUSPS" = "state_province"))
 
+# NORMALIZE
+library(units)
+
+starbucks_sf_norm2 <- starbucks_sf2 %>% 
+  mutate(area_km2 = st_area(geometry) %>% 
+           set_units(km^2) %>% 
+           as.numeric(),
+         area_m2 = st_area(geometry) %>% 
+           as.numeric(),
+         count_norm_m2 = count / area_m2,
+         count_norm_km2 = count / area_km2,
+         area_sq2 = st_area(geometry) %>% 
+           set_units(mi^2) %>% 
+           as.numeric(),
+         count_norm_sq2 = count / area_sq2) %>% 
+  filter(!NAME == "District of Columbia")
+
 starbucks_population <- starbucks_sf_norm2 %>% 
   left_join(states_pop, by = "NAME") %>% glimpse()
 
@@ -102,11 +122,18 @@ starbucks_population <- starbucks_population %>%
 library(cartogram)
 starb_cartogram <- st_transform(starbucks_population, crs = 2163)
 
+# change to sp
 starb_sp <- as(starb_cartogram, "Spatial")
 
-starb_cartogram <- nc_cartogram(starb_sp, weight = "pop_norm", k = 1)
-starb_cartogram <- nc_cartogram(starb_sp, weight = "pop_norm", k = 10)
-starb_cartogram <- nc_cartogram(starb_sp, weight = "total_pop_15", k = 0.5)
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "pop_norm", k = 1)
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "pop_norm", k = 10)
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "total_pop_15", k = 0.5)
+
+# keep as sf
+starb_sf <- starb_cartogram
+starb_cartogram <- cartogram_ncont(starb_sf, weight = "pop_norm", k = 1)
+starb_cartogram <- cartogram_ncont(starb_sf, weight = "pop_norm", k = 10)
+starb_cartogram <- cartogram_ncont(starb_sf, weight = "total_pop_15", k = 0.5)
 
 library(tmap)
 
@@ -133,10 +160,9 @@ starbucks_cartogram <- tm_shape(starb_cartogram) +
 
 starbucks_cartogram
 
-save_tmap(starbucks_cartogram, "starbucks_cartogram_pop_fix.png")
+save_tmap(starbucks_cartogram, "starbucks_cartogram_pop_sf.png")
 
 starb_cartogram %>% 
-  st_as_sf() %>% 
   mutate(pop_norm = pop_norm * 10) %>% 
   ggplot() +
   geom_sf(aes(fill = pop_norm)) +
@@ -145,7 +171,7 @@ starb_cartogram %>%
 
 ```
 
-
+# normalize by area
 
 ```{r }
 
@@ -211,11 +237,11 @@ starb_cartogram <- st_transform(starbucks_sf_norm2, crs = 2163)
 
 starb_sp <- as(starb_cartogram, "Spatial")
 
-starb_cartogram <- nc_cartogram(starb_sp, weight = "count_norm_m2", k = 1000)
-starb_cartogram <- nc_cartogram(starb_sp, weight = "count_norm_km2", k = 1)
-starb_cartogram <- nc_cartogram(starb_sp, weight = "count_norm_sq2", k = 1) # 10000 with DC
-starb_cartogram <- nc_cartogram(starb_sp, weight = "count_norm_sq2", k = 5) # 10000 with DC
-starb_cartogram <- nc_cartogram(starb_sp, weight = "count_norm_sq2", k = 2) # 10000 with DC
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "count_norm_m2", k = 1000)
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "count_norm_km2", k = 1)
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "count_norm_sq2", k = 1) # 10000 with DC
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "count_norm_sq2", k = 5) # 10000 with DC
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "count_norm_sq2", k = 2) # 10000 with DC
 
 library(tmap)
 
@@ -247,18 +273,18 @@ save_tmap(starbucks_cartogram, "starbucks_cartogram_sq_mile.png")
 
 
 
-cartograms :: `nc_cartogram()` >>> by number of each coffee chain!
+# cartograms :: `cartogram_ncont()` >>> by number of each coffee chain!
 
 ```{r }
 # dev="cairo_pdf", dev.args=list(family = "Lucida Console") crs = 2163
 library(cartogram)
 starb_cartogram <- st_transform(starbucks_sf2, crs = 2163)
 
-# reshape as sp object for nc_cartogram()
+# reshape as sp object for cartogram_ncont()
 starb_sp <- as(starb_cartogram, "Spatial")
 
 # construct non-contiguous area cartogram
-starb_cartogram <- nc_cartogram(starb_sp, weight = "count") # k = 1 is default
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "count") # k = 1 is default
 
 library(tmap)
 
@@ -330,15 +356,15 @@ starbucks_sf <- states_sf %>% left_join(starbucks_usa, by = c("STUSPS" = "state_
 # remove Alaska and Hawaii... try to rescale and put them back in another time
 starbucks_sf2 <- starbucks_sf %>% filter(!NAME %in% c("Alaska", "Hawaii"))
 
-# change crs to one nc_cartogram() expects (sf compatibility for cartogram pkg coming soon i think...)
+# change crs to one cartogram_ncont() expects (sf compatibility for cartogram pkg coming soon i think...)
 starb_cartogram <- st_transform(starbucks_sf2, crs = 2163)
 
-# change back into sp object for nc_cartogram()
+# change back into sp object for cartogram_ncont()
 starb_sp <- as(starb_cartogram, "Spatial")
 
 # construct non-contiguous area cartogram, area weighed by "count" var 
 library(cartogram)
-starb_cartogram <- nc_cartogram(starb_sp, weight = "count") # k = 1 is default
+starb_cartogram <- cartogram_ncont(starb_sp, weight = "count") # k = 1 is default
 
 # Sequential single hue color palette :: http://colorbrewer2.org/#type=sequential&scheme=Greens&n=5
 greenpal <- c('#edf8e9','#bae4b3','#74c476','#31a354','#006d2c')

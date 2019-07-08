@@ -1,0 +1,43 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "5/21/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# pkgs
+
+```{r}
+pacman::p_load(tidyverse, scales, janitor, glue, tvthemes)
+```
+
+# data
+
+```{r}
+coast_vs_waste <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-21/coastal-population-vs-mismanaged-plastic.csv")
+
+mismanaged_vs_gdp <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-21/per-capita-mismanaged-plastic-waste-vs-gdp-per-capita.csv")
+
+waste_vs_gdp <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-21/per-capita-plastic-waste-vs-gdp-per-capita.csv")
+```
+
+
+
+```{r}
+glimpse(waste_vs_gdp)
+
+
+waste_vs_gdp %>% 
+  janitor::clean_names() %>% 
+  rename(waste_percapita_person_day = per_capita_plastic_waste_kilograms_per_person_per_day) %>% 
+  filter(year >= 2000) %>% 
+  group_by(entity) %>% 
+  mutate(sum_na = sum(is.na(waste_percapita_person_day))) %>% # from 28 years
+  filter(sum_na < 20) %>% 
+  View()
+```
+

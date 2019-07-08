@@ -1,0 +1,218 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "6/4/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+# packages
+```{r}
+pacman::p_load(dplyr, tidyr, forcats, purrr, ggplot2,
+               scales, janitor, rvest, polite, glue, extrafont)
+loadfonts()
+```
+
+# data
+```{r}
+ramen_ratings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-04/ramen_ratings.csv")
+```
+
+## inspect
+
+```{r}
+glimpse(ramen_ratings)
+```
+
+```{r}
+skimr::skim_to_wide(ramen_ratings)
+```
+
+## clean
+
+```{r}
+ramen_clean <- ramen_ratings %>% 
+  select(-review_number) %>% 
+  mutate(country = case_when(
+    country == "USA" ~ "United States",
+    country == "Sarawak" ~ "Malaysia",
+    country == "Phlippines" ~ "Philippines",
+    country == "UK" ~ "United Kingdom",
+    country == "Hong Kong" ~ "Hong Kong SAR China",
+    country == "Myanmar" ~ "Myanmar (Burma)",
+    country == "Holland" ~ "Netherlands",
+    country == "Dubai" ~ "United Arab Emirates",
+    TRUE ~ country)) %>% 
+  left_join(., countrycode::codelist %>% select(continent, country.name.en),
+            by = c("country" = "country.name.en")) %>% 
+  group_by(country) %>% 
+  mutate(avg = mean(stars, na.rm = TRUE),
+         num_brands = length(unique(brand))) %>% 
+  ungroup() %>% 
+  mutate(country = case_when(
+           country == "Hong Kong SAR China" ~ "Hong Kong",
+           TRUE ~ country)) %>% 
+  mutate_if(is.character, as.factor)
+
+ramen_clean %>% 
+  group_by(continent) %>% 
+  summarize(n = length(unique(country)))
+
+```
+
+
+```{r}
+ramen_clean %>% 
+  filter(num_brands >= 5) %>% 
+  group_by(country) %>% 
+  summarize(ratings = mean(stars, na.rm = TRUE)) %>% 
+  arrange(desc(ratings)) %>% 
+  top_n(10)
+
+# 
+# ramen_clean %>% 
+#   group_by(country) %>% 
+#   summarize(numratings = length(unique(brand))) %>% 
+#   arrange(desc(numratings))
+
+```
+
+```{r}
+ramen_clean %>% 
+  filter(is.na(continent)) %>% 
+  select(country, continent) %>% 
+  distinct()
+```
+
+# plots
+
+## ridge plot
+
+```{r}
+ramen_clean %>% 
+  filter(num_brands >= 5) %>% 
+  ggplot(aes(x = stars, y = reorder(country, avg), height = ..density..)) +
+  ggridges::geom_density_ridges(color = "white", aes(fill = continent)) +
+  scale_x_continuous(breaks = c(0:5),
+                     labels = c(0:5),
+                     expand = c(0, 0)) +
+  labs(title = "Which country has the best ramen?", 
+       subtitle = "Countries with 5 or more brands",
+       caption = "#TidyTuesday by @R_by_Ryo",
+       fill = "Continent:",
+       x = "Stars",
+       y = "Country (by average stars)") +
+  tvthemes::scale_fill_earthKingdom() +
+  tvthemes::theme_theLastAirbender(title.font = "Roboto Condensed",
+                                   text.font = "Roboto Condensed", 
+                                   subtitle.size = 10,
+                                   axis.title.size = 12,
+                                   axis.text.size = 10)
+
+ggsave("ramen_ridges.png")
+```
+
+
+```{r fig.height = 10}
+ramen_clean %>% 
+  #filter(num_brands >= 5) %>% 
+  ggplot(aes(x = stars, y = reorder(country, avg), height = ..density..)) +
+  ggridges::geom_density_ridges(color = "white", aes(fill = continent)) +
+  scale_x_continuous(breaks = c(0:5),
+                     labels = c(0:5),
+                     expand = c(0, 0)) +
+  labs(title = "Which country has the best ramen?", 
+       subtitle = "Countries with 5 or more brands",
+       caption = "#TidyTuesday by @R_by_Ryo",
+       fill = "Continent:",
+       x = "Stars",
+       y = "Country (by average stars)") +
+  tvthemes::scale_fill_earthKingdom() +
+  tvthemes::theme_theLastAirbender(title.font = "Roboto Condensed",
+                                   text.font = "Roboto Condensed", 
+                                   subtitle.size = 10,
+                                   axis.title.size = 12,
+                                   axis.text.size = 10)
+```
+
+
+
+
+
+```{r}
+ramen_clean %>% 
+  filter(continent == "Asia") %>% 
+  group_by(country) %>% 
+  mutate(avg_stars = mean(stars)) %>% 
+  arrange(desc(avg_stars)) %>% 
+  ggplot(aes(x = stars, y = country, height = ..density..)) +
+  ggridges::geom_density_ridges(color = "#F9FEFF", aes(fill = continent))
+```
+
+
+
+```{r}
+ramen_clean %>% 
+  group_by(brand) %>% 
+  mutate(country_num = n_distinct(country)) %>% 
+  ungroup() %>% 
+  select(brand, country, country_num) %>% 
+  distinct(brand, country_num) %>% 
+  arrange(desc(country_num)) %>% 
+  top_n(5) -> thingy
+  #mutate(brand = fct_infreq(brand)) %>% 
+
+#mutate(brand = fct_reorder(brand, count)) %>% 
+ggplot(data = thingy) +
+  geom_col(aes(x = fct_reorder(brand, count), y = count)) +
+  coord_flip()
+
+
+ggplot(data = thingy %>% mutate(brand = fct_reorder(brand, country_num)), 
+       aes(x = brand, y = country_num)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+library(forcats)
+thingy %>% 
+  mutate(brand = forcats::fct_reorder(brand, country_num))
+
+
+
+ramen_clean %>% 
+  ggplot(aes(fct_reorder(brand, stars), stars)) +
+  geom_col()
+```
+
+
+
+
+
+
+
+
+
+```{r}
+brand_rating <- ramen_ratings %>%
+  filter(!is.na(stars)) %>%
+  group_by(brand) %>%
+  summarise(
+    count = n(),
+    avg_rating = mean(stars)
+  ) %>%
+  ungroup() %>%
+  mutate(
+    count_rank = percent_rank(count),
+    rating_rank = percent_rank(avg_rating)
+    )
+
+
+brand_rating %>%
+  filter(count_rank >= 0.9, rating_rank >= 0.7) %>%
+  ggplot(aes(fct_reorder(brand, avg_rating), avg_rating )) +
+  geom_col(aes(fill = brand), alpha = 0.7)
+```
+

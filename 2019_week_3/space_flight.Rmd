@@ -11,8 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 
-```{r}
-pacman::p_load(tidyverse, scales, lubridate, gghighlight)
+```{r, message=FALSE}
+pacman::p_load(tidyverse, scales, lubridate, gghighlight, ggbeeswarm,
+               extrafont, glue, magick)
+loadfonts()
 ```
 
 
@@ -20,6 +22,7 @@ pacman::p_load(tidyverse, scales, lubridate, gghighlight)
 launches_raw <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-01-15/launches.csv")
 
 agencies_raw <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-01-15/agencies.csv")
+
 
 ```
 
@@ -85,24 +88,238 @@ launches_raw %>%
 
 
 
+
+
+```{r}
+add_logo <- function(plot_path, logo_path, logo_position, logo_scale = 10){
+
+    # Requires magick R Package https://github.com/ropensci/magick
+
+    # Useful error message for logo position
+    if (!logo_position %in% c("top right", "top left", 
+                              "bottom right", "bottom left", "bottom center")) {
+        stop("Error Message: Uh oh! Logo Position not recognized\n  Try: logo_positon = 'top left', 'top right', 'bottom left', or 'bottom right'")
+    }
+
+    # read in raw images
+    plot <- magick::image_read(plot_path)
+    logo_raw <- magick::image_read(logo_path)
+
+    # get dimensions of plot for scaling
+    plot_height <- magick::image_info(plot)$height
+    plot_width <- magick::image_info(plot)$width
+
+    # default scale to 1/10th width of plot
+    # Can change with logo_scale
+    logo <- magick::image_scale(logo_raw, as.character(plot_width/logo_scale))
+
+    # Get width of logo
+    logo_width <- magick::image_info(logo)$width
+    logo_height <- magick::image_info(logo)$height
+
+    # Set position of logo
+    # Position starts at 0,0 at top left
+    # Using 0.01 for 1% - aesthetic padding
+
+    if (logo_position == "top right") {
+        x_pos = plot_width - logo_width - 0.01 * plot_width
+        y_pos = 0.01 * plot_height
+    } else if (logo_position == "top left") {
+        x_pos = 0.01 * plot_width
+        y_pos = 0.01 * plot_height
+    } else if (logo_position == "bottom right") {
+        x_pos = plot_width - logo_width - 0.01 * plot_width
+        y_pos = plot_height - logo_height - 0.01 * plot_height
+    } else if (logo_position == "bottom left") {
+        x_pos = 0.01 * plot_width
+        y_pos = plot_height - logo_height - 0.01 * plot_height
+    # add bottom center position!
+    } else if (logo_position == "bottom center") {
+      x_pos = plot_width / 2
+      y_pos = plot_height - logo_height - 0.01 * plot_height
+    }
+
+    # Compose the actual overlay
+    magick::image_composite(plot, logo, offset = paste0("+", x_pos, "+", y_pos))
+
+}
+```
+
+
 ```{r}
 launches_jp_type <- launches_raw %>% 
   filter(state_code == "J") %>% 
-  #arrange(launch_year) %>% 
-  #group_by(launch_year) %>% 
   add_count(type) %>% 
-  mutate(agency_type = as_factor(agency_type),
-    type = as_factor(type),
+  mutate(agency_type = as_factor(agency_type) %>% 
+           fct_recode(Private = "private", State = "state"),
+         type = as_factor(type),
          type = fct_reorder(.f = type, .x = launch_date, 
-                                                .fun = min))
+                            .fun = min)) %>% 
+  mutate(success = if_else(category == "O", "Success", "Failure") %>% as_factor())
 
-cols <- c("private" = "red", state = "grey")
+cols <- c("Private" = "red", "State" = "grey")
+cols <- c("Success" = "grey", "Failure" = "red")
 
 launches_jp_type %>% 
-  ggplot(aes(launch_year, fct_rev(type), color = agency_type)) +
-  geom_jitter() +
-  scale_color_manual(values = cols, name = "Type of Agency") +
-  #scale_y_discrete(limits = rev(levels(launches_jp_type$type))) +
-  theme_minimal()
+  ggplot(aes(launch_year, fct_rev(type), color = success)) +
+  geom_beeswarm(groupOnX = FALSE, cex = 1.5) +
+  scale_color_manual(values = cols, name = "Launch Result") +
+  scale_x_continuous(breaks = scales::pretty_breaks(20)) +
+  theme_minimal() +
+  theme(panel.grid.minor.x = element_blank(),
+        text = element_text(family = "Roboto Condensed"),
+        legend.position = "bottom") +
+  geom_rect(xmin = 1965, xmax = 2020, fill = NA, color = "black",
+            ymin = 3.4, ymax = 7.6, alpha = 0.2) +
+  labs(title = "Timeline of Japan's Space Vehicles",
+       subtitle = glue("
+                       The H-IIA (operated by Mitsubishi Heavy Industries) has been a reliable vehicle for the 
+                       Japan Aerospace Exploration Agency (JAXA) throughout this century."), 
+       x = NULL,
+       y = "Launch System Type",
+       caption = "
+       Source: FiveThirtyEight
+       By @R_by_Ryo") +
+  annotate(geom = "text", 
+           label = glue("
+                        Only 1 of 40 launches of this type have failed."),
+           x = 1967, y = 5.5, hjust = 0, family = "Roboto Condensed")
+
+# save plot
+ggsave(glue("../2019_week_3/jp_space_vehicles_plot.png"))
+#plot <- image_read("../2019_week_3/jp_space_vehicles_plot.png")
+```
+
+```{r}
+add_logo(plot_path = "../2019_week_3/jp_space_vehicles_plot.png",
+         logo_path = "https://upload.wikimedia.org/wikipedia/en/d/d6/Mitsubishi_Heavy_Industries_%28logo%29.svg",
+         logo_position = "bottom left",
+         logo_scale = 5)
+
+ggsave("../2019_week_3/jp_vehicles_logo_plot.png")
+
+add_logo(plot_path = "../2019_week_3/jp_space_vehicles_plot.png",
+         logo_path = "https://upload.wikimedia.org/wikipedia/commons/8/85/Jaxa_logo.svg",
+         logo_position = "top right",
+         logo_scale = 10) -> plot_logo
+
+image_write(image = plot_logo, "../2019_week_3/jp_vehicles_logo_plot.png")
+ggsave("../2019_week_3/jp_vehicles_logo_plot.png")
+```
+
+
+## tidy tuesday submission
+
+
+
+```{r, message=FALSE}
+# load packages
+pacman::p_load(tidyverse, scales, ggbeeswarm, extrafont, glue, magick)
+
+# load fonts
+loadfonts()
+
+# load data
+launches_raw <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-01-15/launches.csv")
+
+# wrangle data
+launches_jp_type <- launches_raw %>% 
+  filter(state_code == "J") %>% 
+  mutate(type = as_factor(type),
+         type = fct_reorder(.f = type, .x = launch_date, 
+                            .fun = min)) %>% 
+  mutate(success = if_else(category == "O", "Success", "Failure") %>% as_factor())
+
+# set color values
+cols <- c("Success" = "grey", "Failure" = "red")
+
+# PLOT
+launches_jp_type %>% 
+  ggplot(aes(launch_year, fct_rev(type), color = success)) +
+  geom_beeswarm(groupOnX = FALSE, cex = 1.5) +
+  scale_color_manual(values = cols, name = "Launch Result") +
+  scale_x_continuous(breaks = scales::pretty_breaks(20)) +
+  geom_rect(xmin = 1965, xmax = 2020, fill = NA, color = "black",
+            ymin = 3.4, ymax = 7.825, alpha = 0.2) +
+  labs(title = "History of Japan's Space Vehicles",
+       subtitle = glue("
+                       The H-IIA (operated by Mitsubishi Heavy Industries) has been a reliable vehicle for the 
+                       Japan Aerospace Exploration Agency (JAXA) throughout this century."), 
+       x = "Year",
+       y = "Launch Vehicle Type",
+       caption = "
+       Source: FiveThirtyEight
+       By @R_by_Ryo") +
+  theme_minimal() +
+  theme(panel.grid.minor.x = element_blank(),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 10),
+        text = element_text(family = "Roboto Condensed"),
+        legend.position = "bottom") +
+  annotate(geom = "text", 
+           label = glue("
+                        Only 1 of 40 launches of this type have failed."),
+           x = 1967, y = 5.5, hjust = 0, family = "Roboto Condensed")
+
+# save plot
+ggsave(glue("../2019_week_3/jp_space_vehicles_plot.png"))
+
+# add logo with Magick using Thomas Mock's custom function
+# check out the explanation in his blog post: https://themockup.netlify.com/posts/2019-01-09-add-a-logo-to-your-plot/
+add_logo <- function(plot_path, logo_path, logo_position, logo_scale = 10){
+
+    # Requires magick R Package https://github.com/ropensci/magick
+
+    # Useful error message for logo position
+    if (!logo_position %in% c("top right", "top left", "bottom right", "bottom left")) {
+        stop("Error Message: Uh oh! Logo Position not recognized\n  Try: logo_positon = 'top left', 'top right', 'bottom left', or 'bottom right'")
+    }
+
+    # read in raw images
+    plot <- magick::image_read(plot_path)
+    logo_raw <- magick::image_read(logo_path)
+
+    # get dimensions of plot for scaling
+    plot_height <- magick::image_info(plot)$height
+    plot_width <- magick::image_info(plot)$width
+
+    # default scale to 1/10th width of plot
+    # Can change with logo_scale
+    logo <- magick::image_scale(logo_raw, as.character(plot_width/logo_scale))
+
+    # Get width of logo
+    logo_width <- magick::image_info(logo)$width
+    logo_height <- magick::image_info(logo)$height
+
+    # Set position of logo
+    # Position starts at 0,0 at top left
+    # Using 0.01 for 1% - aesthetic padding
+
+    if (logo_position == "top right") {
+        x_pos = plot_width - logo_width - 0.01 * plot_width
+        y_pos = 0.01 * plot_height
+    } else if (logo_position == "top left") {
+        x_pos = 0.01 * plot_width
+        y_pos = 0.01 * plot_height
+    } else if (logo_position == "bottom right") {
+        x_pos = plot_width - logo_width - 0.01 * plot_width
+        y_pos = plot_height - logo_height - 0.01 * plot_height
+    } else if (logo_position == "bottom left") {
+        x_pos = 0.01 * plot_width
+        y_pos = plot_height - logo_height - 0.01 * plot_height
+    }
+
+    # Compose the actual overlay
+    magick::image_composite(plot, logo, offset = paste0("+", x_pos, "+", y_pos))
+
+}
+
+# add_logo and save
+plot_logo <- add_logo(plot_path = "../2019_week_3/jp_space_vehicles_plot.png",
+                      logo_path = "https://upload.wikimedia.org/wikipedia/commons/8/85/Jaxa_logo.svg",
+                      logo_position = "top right",
+                      logo_scale = 10)
+
+image_write(image = plot_logo, "../2019_week_3/jp_vehicles_logo_plot.png")
 ```
 

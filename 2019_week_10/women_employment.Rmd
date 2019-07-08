@@ -1,0 +1,81 @@
+---
+title: "Untitled"
+author: "RN7"
+date: "March 9, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages
+
+
+```{r, warning=FALSE, message=FALSE}
+pacman::p_load(tidyverse, rvest, polite, scales, lubridate, extrafont)
+loadfonts()
+```
+
+# data load
+
+```{r}
+jobs_gender <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-03-05/jobs_gender.csv")
+```
+
+# clean
+
+```{r}
+glimpse(jobs_gender)
+```
+
+```{r}
+skimr::skim_to_wide(jobs_gender) %>% knitr::kable()
+```
+
+```{r}
+jobs_gender %>% View()
+```
+
+```{r}
+jobs_gender %>% 
+  ggplot(aes(log(total_earnings_male), log(total_earnings_female), color = major_category)) +
+  geom_point()
+
+jobs_gender %>% 
+  select(major_category, year, percent_female) %>% 
+  mutate(percent_male = (100 - percent_female) %>% round(digits = 1)) %>% 
+  rename(male = percent_male, female = percent_female) %>% 
+  filter(year == 2016) %>% 
+  group_by(major_category) %>% 
+  mutate(diff = male - female) %>% 
+  gather("gender", value = "percentage", -year, -major_category, - diff) %>% 
+  group_by(major_category, gender) %>% 
+  summarise(perc = mean(percentage),
+            diff = mean(diff)) %>% 
+  ungroup() %>% 
+  mutate(major_category = major_category %>% as_factor() %>% fct_reorder(diff)) %>% 
+  ggplot(aes(x = perc, y = major_category, color = gender)) +
+  geom_point() + 
+  geom_segment(aes(xend = perc, yend = major_category)) +
+  theme_minimal()
+```
+
+
+
+
+```{r}
+jobs_gender %>% 
+  select(major_category, year, percent_female) %>% 
+  mutate(percent_male = (100 - percent_female) %>% round(digits = 1)) %>% 
+  rename(male = percent_male, female = percent_female) %>% 
+  group_by(major_category) %>% 
+  mutate(diff = male - female) %>% 
+  gather("gender", value = "percentage", -year, -major_category, - diff) %>% 
+  group_by(major_category, gender, year) %>% 
+  summarise(perc = mean(percentage),
+            diff = mean(diff)) %>% 
+  ggplot(aes(x = year, y = diff, group = major_category, color = major_category)) +
+  geom_line()
+```
+
