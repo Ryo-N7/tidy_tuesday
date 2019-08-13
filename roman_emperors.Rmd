@@ -1,6 +1,4 @@
 ---
-title: "Untitled"
-author: "RN7"
 date: "8/13/2019"
 output: html_document
 ---
@@ -52,25 +50,51 @@ emperors_raw %>% count(rise, sort = TRUE)
 emperors_raw %>% count(cause, sort = TRUE)
 ```
 
+```{r}
+  # mutate(dynasty = replace(dynasty, dynasty == "Julio-Claudian", 
+  #                          "Julio-Claudian (27 B.C. - 68 A.D.)"),
+  #        dynasty = replace(dynasty, dynasty == "Flavian", 
+  #                          "Flavian (68 - 96 A.D.)"),
+  #        dynasty = replace(dynasty, dynasty == "Nerva-Antonine", 
+  #                          "Nerva-Antonine (96 - 192 A.D.)"),
+  #        dynasty = replace(dynasty, dynasty == "Severan", 
+  #                          "Severan (193 - 235 A.D.)"),
+  #        dynasty = replace(dynasty, dynasty == "Julio-Claudian", 
+  #                          "Julio-Claudian (27 B.C. - 68 A.D.)"))
+```
+
 
 ```{r}
 emperors_clean <- emperors_raw %>% 
   select(-verif_who) %>% 
   mutate(rise = fct_relevel(rise, "Birthright", "Appointment by Emperor",
                             "Appointment by Senate", "Election", 
+                            "Purchase",
                             "Appointment by Praetorian Guard",
                             "Appointment by Army",
-                            "Purchase", "Seized Power"),
+                            "Seized Power"),
          dynasty = case_when(
            name %in% c("Trajan Decius", "Hostilian", 
                        "Trebonianus Gallus", "Aemilian") ~ "Decian",
            name %in% c("Valerian", "Gallienus") ~ "Valerian",
            name %in% c("Cladius Gothicus", "Quintillus", 
-                       "Aurelian") ~ "Gordian (cont.)",
+                       "Aurelian") ~ "Gordian",
            name %in% c("Tacitus", "Florianus", "Probus") ~ "Tacitus",
            name %in% c("Carus", "Numerian", "Carinus") ~ "Caran",
            TRUE ~ dynasty)) %>% 
-  mutate(dynasty = fct)
+  mutate(dynasty = case_when(
+    dynasty == "Julio-Claudian" ~ "Julio-Claudian (27 B.C. - 68 A.D.)",
+    dynasty == "Flavian" ~ "Flavian (68 - 96 A.D.)",
+    dynasty == "Nerva-Antonine" ~ "Nerva-Antonine (96 - 192 A.D.)",
+    dynasty == "Severan" ~ "Severan (193 - 235 A.D.)",
+    dynasty == "Gordian" ~ "Gordian (238 - 249 A.D. & 268 - 275 A.D.)",
+    dynasty == "Decian" ~ "Decian (249 - 253 A.D.)", 
+    dynasty == "Valerian" ~ "Valerian (253 - 268 A.D.)",
+    dynasty == "Tacitus" ~ "Tacitus (275 - 282 A.D.)", 
+    dynasty == "Caran" ~ "Caran (282 - 285 A.D.)",
+    dynasty == "Constantinian" ~ "Diocletian (285 - 305 A.D.)"
+  )) %>% 
+  mutate(dynasty = as_factor(dynasty))
 ```
 
 green for peaceful, red for violent
@@ -81,28 +105,51 @@ ggsci::default_igv
 
 dutchmasters::milkmaid
 
+"#657b83"
+
+```{r}
+breaks_df <- c("Julio-Claudian (27 B.C. - 68 A.D.)",
+               "Flavian (68 - 96 A.D.)",
+               "Nerva-Antonine (96 - 192 A.D.)",
+               "Severan (193 - 235 A.D.)",
+               "Gordian (238 - 249 A.D. & 268 - 275 A.D.)",
+               "Decian (249 - 253 A.D.)", 
+               "Valerian (253 - 268 A.D.)",
+               "Tacitus (275 - 282 A.D.)", 
+               "Caran (282 - 285 A.D.)",
+               "Diocletian (285 - 305 A.D.)")
+```
+
+
+
 ```{r, fig.width=15}
 emperors_clean %>% 
   filter(index <= 49) %>% 
   ggplot(aes(x = index, y = rise, group = 1)) +
-  geom_path() +
-  geom_point(aes(fill = dynasty),
+  geom_path(color = "#657b83") +
+  geom_point(aes(fill = dynasty), color = "grey",
              size = 5.5, shape = 21, stroke = 2) + 
   scale_x_discrete(expand = c(0.025, 0)) +
   scale_y_discrete(limits = rev(levels(emperors_clean$rise))) +
-  scale_fill_dutchmasters(palette = "milkmaid") +
-  labs(title = "Rise of Roman Emperors",
-       subtitle = glue::glue("
-                             From Augustus (26 B.C. - 14 A.D.) to Diocletian (379 A.D. - 395 A.D.)
-                             Transition of Power Ordered by 'Peaceful' to 'Violent' *"),
+  #scale_fill_ochre(palette = "emu_woman_paired") +
+  #scale_fill_dutchmasters(palette = "milkmaid") +
+  scale_fill_dutchmasters(palette = "pearl_earring") +
+  guides(fill = guide_legend(title = "Dynasty", ncol = 3, direction = "horizontal")) +
+  labs(title = "<strong style='color: black'>Rise</strong> of Roman Emperors",
+       subtitle = "From Augustus (26 B.C. - 14 A.D.) to Diocletian (285 A.D. - 305 A.D.)  
+       Transition of Power Ordered by <i style='color:#228B22'>'Peaceful'</i> to <i style='color:#800000'>'Violent'</i> *",
        x = "Time: 26 B.C. - 395 A.D.", y = NULL,
        caption = glue::glue("* Subjective and with many caveats")) +
   theme_solarized() +
-  theme(plot.title = element_text(size = 25),
-        plot.subtitle = element_text(size = 20),
-        text = element_text(size = 16),
+  theme(plot.title = element_markdown(size = 25),
+        plot.subtitle = element_markdown(size = 20),
+        axis.title.x = element_text(size = 16),
         axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(color = "#657b83", size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        legend.position = "bottom")
 ```
 
 
@@ -112,14 +159,23 @@ emperors_clean %>%
 emperors_clean %>% 
   filter(index <= 49) %>% 
   ggplot(aes(x = index, y = cause, group = 1)) +
-  geom_point(aes(color = dynasty),
-             size = 3.5) + 
-  geom_path() +
+  geom_path(color = "#657b83") +
+  geom_point(aes(fill = dynasty), color = "grey",
+             size = 5.5, shape = 21, stroke = 2) + 
+  scale_x_discrete(expand = c(0.025, 0)) +
   scale_y_discrete(limits = rev(levels(emperors_clean$cause))) +
-  labs(title = "Fall of Roman Emperors",
-       subtitle = glue::glue("
-                             From Augustus (26 B.C. - 14 A.D.) to Diocletian (379 A.D. - 395 A.D.)
-                             Transition of Power Ordered by Peaceful to Violent (*Subjective)"),
-       x = "Time: 26 B.C. - 395 A.D.", y = NULL) +
-  theme_solarized()
+  scale_fill_dutchmasters(palette = "pearl_earring") +
+  labs(title = "<strong style='color: black'>Fall</strong> of Roman Emperors",
+       subtitle = "From Augustus (26 B.C. - 14 A.D.) to Diocletian (379 A.D. - 395 A.D.)  
+       Transition of Power Ordered by <i style='color:#228B22'>'Peaceful'</i> to <i style='color:#800000'>'Violent'</i> *",
+       x = "Time: 26 B.C. - 395 A.D.", y = NULL,
+       caption = glue::glue("* Subjective and with many caveats")) +
+  theme_solarized() +
+  theme(plot.title = element_markdown(size = 25),
+        plot.subtitle = element_markdown(size = 20),
+        legend.text = element_text(size = 16),
+        axis.title.x = element_text(size = 16),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(color = "#657b83", size = 16))
 ```
