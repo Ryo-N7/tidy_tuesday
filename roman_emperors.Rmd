@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 pacman::p_load(dplyr, purrr, tidyr, ggplot2, ggtext, hrbrthemes, extrafont, 
-               ggalt, ggforce, scales, ggrepel, forcats,
+               ggalt, ggforce, scales, ggrepel, forcats, ggupset,
                ggthemes, dutchmasters, ochRe, cowplot)
 
 loadfonts(quiet = TRUE, device = "pdf")
@@ -521,6 +521,60 @@ grid::grid.newpage()
 justify(emperors_riset,
         emperors_fallt, "left", "top")
 ```
+
+
+
+
+# Upset plots
+
+
+
+
+
+
+```{r, fig.height=5, fig.width=8}
+emperors_clean %>% 
+  mutate_at(c("rise", "cause"), as.character) %>% 
+  mutate(rise = paste0("<b style='color: black'>Rise</b>: ", rise),
+         cause = paste0("<b style='color: black'>Fall</b>: ", cause)) %>% 
+  mutate(risefall = map2(rise, cause, ~c(.x, .y))) %>% 
+  ggplot(aes(x = risefall)) +
+  geom_bar(fill = "#8B0000") + 
+  scale_x_upset(n_intersections = 10,
+                expand = c(0.01, 0.01)) +
+  scale_y_continuous(expand = c(0, 0),
+                     labels = seq(0, 15, by = 2),
+                     breaks = seq(0, 15, by = 2)) +
+  labs(title = "The <b style='color: black'>Rise</b> & <b style='color: black'>Fall</b> of Roman Emperors",
+       subtitle = "Many Emperors With A 'Rightful' Claim Met An <br> Untimely End By <b style='color: #8B0000'>Assassination</b> Or <b style='color: #8B0000'>Execution</b>.",
+       caption = "<b style='color: black'>Source</b>: Wikipedia <br><b style='color: black'>By</b>: @R_by_Ryo",
+       x = NULL, y = "Number of Occurence") +
+  theme_combmatrix(
+    text = element_text(family = "Quattrocento", color = "#657b83"),
+    plot.title = element_markdown(family = "Quattrocento"),
+    plot.subtitle = element_markdown(family = "Quattrocento"),
+    plot.caption = element_markdown(family = "Quattrocento"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_markdown(family = "Quattrocento", color = "#657b83", size = 10),
+    plot.background = element_rect(fill = "#fdf6e3"),
+    panel.background = element_rect(fill = "#fdf6e3"),
+    combmatrix.panel.striped_background.color.one = "#d3d3d3",
+    combmatrix.panel.point.color.fill = "#8B0000",
+    combmatrix.panel.line.color = "#8B0000",   ## added this option in myself in my own version of the package...
+    panel.grid.major.x = element_blank(),
+    combmatrix.label.extra_spacing = 5,
+    axis.ticks = element_blank())
+```
+
+```{r}
+ggsave(filename = here::here("emperors_upsetplot.png"),
+       height = 5, width = 8)
+```
+
+
+
+
+
 
 
 
